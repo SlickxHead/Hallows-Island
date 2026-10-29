@@ -98,6 +98,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--glow);outline-o
 #tracker{cursor:pointer}
 #tracker .tq.sub{margin-top:6px;padding-top:5px;border-top:1px solid #7a553044;opacity:.75}
 #tracker .navd{margin-top:3px;font-weight:800;color:#8a4a12;font-size:12px}
+.hearts{color:#ff6f91;letter-spacing:1px;font-size:15px;font-family:var(--f-body)}
+.hearts i{font-style:normal;color:#ffffff30}
+.hearts.sm{font-size:12px;min-width:62px}
+.pill.heart{color:#ff8fb0}
+.got{color:var(--good)}
+h3.sub{margin:8px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.slot em{position:absolute;top:2px;left:4px;font-style:normal;font-size:11px;color:#ff6f91}
 #tracker .gtip{margin-top:5px;padding-top:4px;border-top:1px dashed #7a553066;font-size:12px;font-weight:700;color:#5a3410}
 .guide{outline:3px solid #ffb347!important;outline-offset:2px;animation:gpulse 1.1s ease-in-out infinite}
 @keyframes gpulse{50%{outline-color:#ffb34722;box-shadow:0 0 18px 6px #ffb34777}}
@@ -545,6 +552,12 @@ const DECOS={
   trophy:{name:'Skull Trophy',tab:'Decor',where:'in',cost:{bone:5},r:.45},
   flamp:{name:'Floor Lamp',tab:'Lighting',where:'in',cost:{coin:140},r:.35},
   candles:{name:'Candle Cluster',tab:'Lighting',where:'in',cost:{coin:50},r:.3},
+  // friendship rewards: they only come from villagers and are placed from storage
+  giantpump:{name:'Giant Pumpkin',tab:'Decorations',where:'out',cost:{},unique:true,r:1.1},
+  keeplamp:{name:'Keeper’s Lantern',tab:'Decorations',tabIn:'Lighting',where:'both',cost:{},unique:true,r:.4},
+  shipbottle:{name:'Ship in a Bottle',tab:'Decor',where:'in',cost:{},unique:true,r:.45},
+  cat:{name:'Black Cat Statue',tab:'Decorations',tabIn:'Decor',where:'both',cost:{},unique:true,r:.45},
+  crystalball:{name:'Crystal Ball',tab:'Decor',where:'in',cost:{},unique:true,r:.4},
 };
 const BUILD_TABS=['House','Decorations','Furniture','Farming','Other'];
 const IN_TABS=['House','Furniture','Decor','Lighting'];
@@ -565,7 +578,7 @@ const PANTS0='#2b2622', SHOES0='#4a3122';
 ================================================================= */
 const DOCK_A=45*D2R, DOCK={t0:R(DOCK_A)-4,t1:R(DOCK_A)+15,w:1.5};
 const P={
-  village:{x:0,z:0}, house:{x:-17,z:-8}, yard:{x:-17,z:-1}, merchant:{x:12,z:1}, pete:{x:3,z:-6.5}, wick:{x:-7,z:-4.8},
+  village:{x:0,z:0}, house:{x:-17,z:-8}, yard:{x:-17,z:-1}, merchant:{x:12,z:1}, hazel:{x:12,z:2.6}, pete:{x:3,z:-6.5}, wick:{x:-7,z:-4.8},
   patch:polar(140,28), graveyard:polar(-75,31), cave:polar(-133,37), beach:polar(45,48),
   lighthouse:edgePt(-20,1), falls:edgePt(-103,-10), sign:{x:-3.5,z:4.5},
 };
@@ -748,7 +761,7 @@ function buildCharacter(L,opt={}){
     mk(Box(.62,.13,.2),hairM,0,.22,.24,head).rotation.x=-.45;
     if(L.style==='Long'){mk(Box(.68,.66,.24),hairM,0,-.22,-.2,head);for(const k of [-1,1])mk(Box(.12,.48,.2),hairM,k*.35,-.16,.06,head);}
     if(L.style==='Short'){for(const k of [-1,1])mk(Box(.08,.2,.14),hairM,k*.36,-.04,.1,head);}
-    if(L.style==='Spiky'&&L.hat!=='Witch Hat'&&L.hat!=='Beanie'){
+    if(L.style==='Spiky'&&!COVER_HATS.includes(L.hat)){
       const up=new THREE.Vector3(0,1,0);
       for(let k=0;k<8;k++){const a=k/8*TAU;const d=new THREE.Vector3(Math.cos(a)*.55,.8,Math.sin(a)*.55-.15).normalize();const sp=mk(Cone(.1,.34,5),hairM,d.x*.33,d.y*.33+.04,d.z*.33,head);sp.quaternion.setFromUnitVectors(up,d);}
       mk(Cone(.11,.36,5),hairM,0,.42,0,head);
@@ -757,6 +770,7 @@ function buildCharacter(L,opt={}){
   addHat(L,head,opt);
   g.userData.P=Pp; return g;
 }
+const COVER_HATS=['Witch Hat','Beanie','Starry Hat','Keeper’s Cap'];
 function addHat(L,head,opt){
   if(L.hat==='Witch Hat'){
     mk(Cyl(.62,.62,.04,24),M('#2a2233'),0,.28,0,head);
@@ -767,8 +781,18 @@ function addHat(L,head,opt){
     const b=new THREE.Mesh(new THREE.SphereGeometry(.41,16,10,0,TAU,0,Math.PI*.5),M('#8a3a2a')); b.position.y=.04; b.castShadow=true; head.add(b);
     mk(new THREE.TorusGeometry(.39,.06,6,18),M('#6e2c20'),0,.07,0,head).rotation.x=Math.PI/2;
     mk(Sph(.1,8,6),M('#e9d6b4'),0,.47,0,head);
-  }else if(L.hat==='Pumpkin'){
-    const ph=buildPumpkin(.26); ph.position.y=.26; ph.rotation.z=.15; head.add(ph);
+  }else if(L.hat==='Pumpkin'||L.hat==='Golden Pumpkin'){
+    const ph=buildPumpkin(.26,false,L.hat==='Pumpkin'?'#e9781f':'#d9a72a'); ph.position.y=.26; ph.rotation.z=.15; head.add(ph);
+  }else if(L.hat==='Starry Hat'){
+    mk(Cyl(.62,.62,.04,24),M('#3e2466'),0,.28,0,head);
+    const cn=mk(Cone(.33,.9,16),M('#3e2466'),0,.72,-.02,head); cn.rotation.set(-.14,0,-.18);
+    mk(Cyl(.335,.335,.09,16),M('#c9c4e8',{metalness:.5,roughness:.35}),0,.34,0,head);
+    [[.2,.55,.22],[-.18,.7,.18],[.05,.9,.14],[-.3,.31,.42],[.36,.31,-.38]].forEach(([x,y,z])=>{const st=mk(new THREE.OctahedronGeometry(.05,0),EM('#fff3b0'),x,y,z,head);st.castShadow=false;});
+  }else if(L.hat==='Keeper’s Cap'){
+    mk(Cyl(.34,.36,.24,20),M('#22304a'),0,.36,0,head);
+    mk(Cyl(.36,.35,.07,20),M('#e9e1cb'),0,.5,0,head);
+    const br=mk(Cyl(.34,.34,.03,20,1,false,-Math.PI/2,Math.PI),M('#15151c'),0,.25,.14,head); br.scale.z=1.25;
+    mk(Box(.1,.08,.03),M('#e6c34a',{metalness:.6,roughness:.35}),0,.38,.35,head);
   }
 }
 /* ---------- Detailed hero (Tripo3D model, rigged and animated with Tripo motion presets) ---------- */
@@ -848,7 +872,7 @@ function buildHero(L,girl){
   const g=new THREE.Group(), fix=new THREE.Group();
   fix.rotation.y=K.rot; fix.scale.setScalar(HERO_SCALE); g.add(fix);
   const src=THREE.SkeletonUtils.clone(D.scene); fix.add(src);
-  const bones={}, hatted=L.hat==='Witch Hat'||L.hat==='Beanie';
+  const bones={}, hatted=COVER_HATS.includes(L.hat);
   src.traverse(o=>{
     if(o.isBone)bones[o.name]=o;
     if(o.isMesh&&girl){
@@ -911,8 +935,8 @@ function buildHero(L,girl){
   const head=bones.Head;
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
   if(head&&L.hat&&L.hat!=='None'){
-    const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=K.hat[4]; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
-    attachRaw(hg,K.hat[0],L.hat==='Pumpkin'?K.hat[3]:K.hat[1],K.hat[2]);
+    const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=K.hat[4]; const pum=/Pumpkin/.test(L.hat); hg.scale.setScalar(pum?.5:.44);
+    attachRaw(hg,K.hat[0],pum?K.hat[3]:K.hat[1],K.hat[2]);
   }
   // the hand: tools attach here exactly as they do on the classic body
   const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
@@ -1026,6 +1050,17 @@ function buildDeco(id){
       mk(Cone(.06,.35,4),M('#3f6a2e'),.4,.85,.05,g);glow('#7ac8ff',2,g,0,1,0,.4);break;}
     case 'trophy':{mk(Box(.6,.8,.6),M('#3b2a1e'),0,.4,0,g);const bn=M('#e9e1cb');mk(Sph(.25,12,10),bn,0,1.05,0,g);mk(Box(.26,.1,.2),bn,0,.86,.05,g);for(const k of [-1,1]){mk(Sph(.07,8,6),M('#1c1714'),k*.09,1.08,.2,g);const e=mk(Sph(.03,6,5),EM('#ff9a2a'),k*.09,1.08,.24,g);e.castShadow=false;const b=mk(Cyl(.035,.035,.7,6),bn,0,.83,.2,g);b.rotation.set(0,0,k*1.1);}break;}
     case 'flamp':{mk(Cyl(.22,.25,.06,12),M('#2b2622'),0,.03,0,g);mk(Cyl(.03,.03,1.7,6),M('#2b2622'),0,.88,0,g);const sh=mk(new THREE.CylinderGeometry(.2,.38,.42,12,1,true),new THREE.MeshStandardMaterial({color:'#e9c48a',emissive:'#a8622a',emissiveIntensity:.8,side:THREE.DoubleSide}),0,1.82,0,g);sh.castShadow=false;const bl=mk(Sph(.09,8,6),EM('#ffe0a0'),0,1.72,0,g);bl.castShadow=false;glow('#ffc06a',2.8,g,0,1.75,0,.7);break;}
+    case 'giantpump':{const p=buildPumpkin(1.05,false,'#e9781f');g.add(p);const rb=mk(new THREE.TorusGeometry(.18,.05,6,14),M('#c0392b'),.25,1.7,.45,g);rb.rotation.y=.6;mk(Box(.08,.3,.02),M('#c0392b'),.3,1.48,.5,g);break;}
+    case 'keeplamp':{const l=buildLantern(false);g.add(l);const fl=mk(Sph(.12,10,8),EM('#7ac8ff'),0,1.1,0,g);fl.castShadow=false;glow('#7ac8ff',3,g,0,1.15,0,.7);break;}
+    case 'shipbottle':{mk(Box(.7,.5,.4),M('#5a3a24'),0,.25,0,g);for(const k of [-1,1])mk(Box(.08,.12,.3),M('#3b2616'),k*.22,.56,0,g);
+      const bt=mk(Cyl(.16,.16,.62,14),new THREE.MeshStandardMaterial({color:'#bfe8d0',transparent:true,opacity:.35,roughness:.1}),0,.74,0,g);bt.rotation.z=Math.PI/2;bt.castShadow=false;
+      const nk=mk(Cyl(.06,.08,.14,10),new THREE.MeshStandardMaterial({color:'#bfe8d0',transparent:true,opacity:.4}),.38,.74,0,g);nk.rotation.z=Math.PI/2;mk(Cyl(.05,.05,.06,8),M('#8a5a32'),.47,.74,0,g).rotation.z=Math.PI/2;
+      mk(Box(.32,.06,.1),M('#6b3a1e'),0,.67,0,g);mk(Cyl(.01,.01,.22,4),M('#3b2616'),0,.79,0,g);mk(Box(.02,.14,.12),M('#efe6cf'),.02,.8,0,g);break;}
+    case 'cat':{const bk=M('#1c1820');mk(Cyl(.32,.34,.08,14),M('#55525c'),0,.04,0,g);const b=mk(Sph(.26,12,10),bk,0,.34,0,g);b.scale.set(.9,1.15,1);
+      mk(Sph(.18,12,10),bk,0,.72,.05,g);for(const k of [-1,1]){const e=mk(Cone(.07,.16,4),bk,k*.1,.88,.04,g);e.rotation.z=-k*.25;const ey=mk(Sph(.035,8,6),EM('#ffd24a'),k*.07,.74,.2,g);ey.castShadow=false;}
+      const tl=mk(new THREE.TorusGeometry(.22,.035,6,14,Math.PI*1.2),bk,-.05,.22,-.22,g);tl.rotation.set(0,Math.PI/2,.3);break;}
+    case 'crystalball':{mk(Cyl(.2,.26,.12,12),M('#c9a14a',{metalness:.6,roughness:.35}),0,.06,0,g);for(let k=0;k<3;k++){const a=k/3*TAU;const c=mk(Cyl(.025,.025,.2,5),M('#c9a14a',{metalness:.6}),Math.cos(a)*.14,.2,Math.sin(a)*.14,g);c.rotation.z=.3;}
+      const ball=mk(Sph(.24,18,14),new THREE.MeshStandardMaterial({color:'#b07bff',emissive:'#5a2a9a',emissiveIntensity:.8,transparent:true,opacity:.75,roughness:.05}),0,.48,0,g);ball.castShadow=false;glow('#c49bff',2.2,g,0,.48,0,.6);break;}
     case 'candles':{mk(Cyl(.3,.32,.05,12),M('#6b6f78',{metalness:.5}),0,.03,0,g);[[0,.5,0],[.15,.35,.06],[-.13,.28,.08]].forEach(([x,h,z])=>{mk(Cyl(.06,.06,h,8),M('#efe6cf'),x,.05+h/2,z,g);const f=mk(Cone(.035,.1,6),EM('#ffc24a'),x,.12+h,z,g);f.castShadow=false;});glow('#ffb04a',1.8,g,0,.55,0,.75);break;}
   }
   return g;
@@ -2047,7 +2082,7 @@ function canAct(){return mode==='play'&&!modalOpen&&!player.dead&&!fish&&!placin
 // ---- farming
 function usePlot(p){
   if(p.state==='ripe'){
-    const n=Math.random()<.3?2:1; p.state='empty'; p.t=0;
+    const n=Math.random()<(perk('gloves')?.5:.3)?2:1; p.state='empty'; p.t=0;
     if(p.wild){p.state='growing';p.dur=p.t=90;}
     give('pumpkin',n,false,{x:p.x,y:1.6,z:p.z}); S.stats.pumpkins+=n; sfx('pick'); faceTo(p.x,p.z); heroAct('lift',{speed:2.4});
     burst(p.x,1,p.z,'#ffb04a',10,2,.3,.6); for(let i=0;i<6;i++)puff({x:p.x,y:.9,z:p.z,vx:rand(-2,2),vy:rand(2,4),vz:rand(-2,2),grav:-8,color:'#6a9a3a',size:.25,life:.8});
@@ -2055,7 +2090,7 @@ function usePlot(p){
     if(n===2)toast('Double harvest!','pumpkin');
   }else if(p.state==='empty'||(p.wild&&p.state==='growing'&&p.t>40)){
     if(inv('seeds')<=0){toast(p.wild?'Buy pumpkin seeds from Hazel to speed up regrowth':'You need pumpkin seeds. Hazel sells them.','seeds');sfx('error');return;}
-    take('seeds',1); (S.tips||(S.tips={})).seeds=true; p.state='growing'; p.dur=p.t=40; sfx('build'); burst(p.x,.7,p.z,'#8a6a3a',8,1.5,.25,.5); updatePlotVisual(p); toast('Planted pumpkin seeds. Ready in 40 seconds.','seeds');
+    take('seeds',1); (S.tips||(S.tips={})).seeds=true; p.state='growing'; p.dur=p.t=perk('can')?20:40; sfx('build'); burst(p.x,.7,p.z,'#8a6a3a',8,1.5,.25,.5); updatePlotVisual(p); toast('Planted pumpkin seeds. Ready in '+p.dur+' seconds.','seeds');
   }else toast('Still growing. Check back in '+Math.ceil(p.t)+'s');
 }
 function updatePlots(dt){
@@ -2093,14 +2128,14 @@ function startFishing(spot){
   if(fish)return;
   setTool('rod'); faceTo(spot.wx,spot.wz);
   const bait=inv('bait')>0; if(bait)take('bait',1);
-  fish={spot,phase:'cast',t:0,bait,wait:bait?rand(1.2,2.6):rand(2.4,5.2)};
+  fish={spot,phase:'cast',t:0,bait,wait:(bait?rand(1.2,2.6):rand(2.4,5.2))*(perk('rod')?.65:1)};
   bobber.visible=true; fishLine.visible=true; sfx('swing'); heroAct('cast',{upper:true,speed:1.6,holdAt:1.1});
   showFishUI(`<div class="t">Waiting for a bite${bait?' (bait used)':''}…</div><div class="muted" style="font-size:13px">Move to stop fishing</div>`);
 }
 function rollFish(table,bait){const list=FISH_TABLES[table].map(([id,w])=>[id,bait&&['eel','ghostcarp','koi'].includes(id)?w*2.2:w]);let tot=list.reduce((a,b)=>a+b[1],0),r=Math.random()*tot;for(const [id,w] of list){if((r-=w)<=0)return id;}return list[0][0];}
 function fishPress(){
   if(!fish)return false;
-  if(fish.phase==='bite'){const id=rollFish(fish.spot.table,fish.bait);const [zw,sp]=FISH_DIFF[id];fish.phase='reel';fish.fishId=id;fish.zw=zw;fish.sp=sp;fish.zs=rand(.05,.95-zw);fish.t=0;fish.n=0;
+  if(fish.phase==='bite'){const id=rollFish(fish.spot.table,fish.bait);let [zw,sp]=FISH_DIFF[id];if(perk('rod'))zw=Math.min(.5,zw*1.3);fish.phase='reel';fish.fishId=id;fish.zw=zw;fish.sp=sp;fish.zs=rand(.05,.95-zw);fish.t=0;fish.n=0;
     showFishUI(`<div class="t">Reel it in! Stop the needle in the green</div><div class="reel" id="reelBar"><i class="z" style="left:${fish.zs*100}%;width:${zw*100}%"></i><i class="n" id="needle"></i></div><div class="muted" style="font-size:13px">Press E or tap the bar</div>`);
     $('#reelBar').addEventListener('pointerdown',e=>{e.stopPropagation();fishPress();});return true;}
   if(fish.phase==='reel'){const ok=fish.n>=fish.zs&&fish.n<=fish.zs+fish.zw;const id=fish.fishId;
@@ -2147,8 +2182,9 @@ function climbLighthouse(){
    Quests
 ================================================================= */
 function fishCount(){return Object.keys(ITEMS).filter(k=>ITEMS[k].fish).reduce((a,k)=>a+inv(k),0);}
-const GIVERS={pete:{name:'Pumpkin Pete',short:'Pete'},wick:{name:'Keeper Wick',short:'Wick'}};
-const CHAIN={pete:['pumpkins','fish','timber','house'],wick:['bones','light','gems']};
+const GIVERS={pete:{name:'Pumpkin Pete',short:'Pete'},wick:{name:'Keeper Wick',short:'Wick'},hazel:{name:'Hazel',short:'Hazel'}};
+const CHAIN={pete:['pumpkins','fish','timber','house'],wick:['bones','light','gems'],hazel:[]};
+const storyLeft=g=>CHAIN[g].some(id=>!S.qdone[id]);
 const QBY={}; QUESTS.forEach(q=>QBY[q.id]=q);
 function migrateQuests(){ // saves from before there were two quest givers kept one list in a fixed order
   if(S.qi===undefined)return;
@@ -2180,15 +2216,112 @@ function makeOddJob(g){
   const text=g==='wick'?`I could use a hand, if your legs are younger than mine. Fetch me ${need[k]} ${nm}${pl}? I pay in good coin.`:`Got a little errand if you're bored. I need ${need[k]} ${nm}${pl}. I'll pay better than Hazel.`;
   return {id:'odd',giver:g,title:'Odd Job: '+ITEMS[k].name,text,need,reward:{coin:Math.round(val*2+100)},hint:needHint(k)+' '+GIVERS[g].short+' posts a new odd job each time you finish one.'};
 }
+
+/* ---------- Friendship with the villagers: favors, gifts, and a reward at every heart ---------- */
+const HEART_AT=[0,60,150,270,420,600];   // friendship points needed for hearts 1 to 5
+const FAVOR_PTS=30, STORY_PTS=50, GIFT_WAIT=240;
+const FRIENDS={
+  pete:{loves:['pumpkin','perch'],likes:['moonfish','wood','seeds','koi'],
+    hi:['Well, if it isn’t my favorite neighbor!','Always good to see you. The patch has been behaving, mostly.','You again! I was just thinking I could use a hand.'],
+    favors:[
+      {k:'pie',item:'pumpkin',n:[4,6],t:'Pie night at the plaza! I need {n} pumpkins, and I already promised everyone seconds.'},
+      {k:'fence',item:'wood',n:[5,8],t:'The wind flattened my back fence again. Could you fetch {n} wood?'},
+      {k:'fry',item:'moonfish',n:[2,3],t:'Fish fry for the neighbors tonight. {n} moonfish should feed the lot of them.'},
+      {k:'perch',item:'perch',n:[1,2],t:'Pumpkin perch are the only fish my cat respects. Catch {n} for her?'},
+      {k:'oven',item:'stone',n:[6,9],t:'I’m building a stone oven for the harvest bake. Bring me {n} stone?'},
+      {k:'scare',item:'bone',n:[2,3],t:'The kids say my scarecrow isn’t spooky enough. {n} old bones ought to fix that.'}],
+    rewards:[
+      {name:'Giant Pumpkin',desc:'A prize-winning pumpkin for your yard.',deco:'giantpump'},
+      {name:'Harvest Gloves',desc:'Ripe pumpkins give a double harvest half the time.',perk:'gloves'},
+      {name:'Lucky Rod',desc:'Fish bite sooner and the green reel zone is wider.',perk:'rod'},
+      {name:'Golden Watering Can',desc:'Seeds you plant grow twice as fast.',perk:'can'},
+      {name:'Golden Pumpkin Hat',desc:'Only Pete’s best friend gets to wear one.',hat:'Golden Pumpkin'}]},
+  wick:{loves:['eel','amethyst'],likes:['bone','ghostcarp','stone','moonstone'],
+    hi:['Ah, the young legs return.','The lamp burned bright last night. I checked twice.','Sit a while. Or don’t, you look busy.'],
+    favors:[
+      {k:'rattle',item:'bone',n:[3,4],t:'The graveyard is rattling again. Settle it down and bring me {n} old bones?'},
+      {k:'lens',item:'amethyst',n:[2,2],t:'The lighthouse lens wants another polish. {n} amethyst, if you can find them.'},
+      {k:'glow',item:'eel',n:[1,1],t:'I read by the glow of a lantern eel. Mine has gone dim. Catch me {n}?'},
+      {k:'soup',item:'ghostcarp',n:[1,1],t:'Ghost carp soup, my mother’s recipe. I need {n} from the pond by the falls.'},
+      {k:'steps',item:'stone',n:[8,10],t:'The lighthouse steps are crumbling. {n} stone would patch the worst of them.'},
+      {k:'fire',item:'wood',n:[5,7],t:'The nights are getting long. {n} wood for my stove?'}],
+    rewards:[
+      {name:'Keeper’s Lantern',desc:'The blue lantern Wick carried for forty years.',deco:'keeplamp'},
+      {name:'Old Spyglass',desc:'Every hidden chest on the island shows on your minimap.',perk:'spyglass'},
+      {name:'Ship in a Bottle',desc:'Wick built it during one very long winter.',deco:'shipbottle'},
+      {name:'Keeper’s Charm',desc:'Your maximum health goes up by 25.',perk:'charm'},
+      {name:'Keeper’s Cap',desc:'Wick’s own captain’s cap, brim and all.',hat:'Keeper’s Cap'}]},
+  hazel:{loves:['koi','moonstone'],likes:['amethyst','ghostcarp','eel','bone'],
+    hi:['Back again? Business must be good.','Mind the cat. She’s in a mood.','Oh good, I wanted a second opinion on these candles.'],
+    favors:[
+      {k:'koi',item:'koi',n:[1,1],t:'A collector wants a Spectral Koi and offered a ridiculous sum. Catch {n} for me?'},
+      {k:'stock',item:'moonfish',n:[3,4],t:'The fish crate is empty and customers are grumbling. {n} moonfish?'},
+      {k:'jewel',item:'amethyst',n:[2,3],t:'I’m stringing amethyst charms for the festival. Bring me {n}?'},
+      {k:'lantern',item:'pumpkin',n:[4,5],t:'The stall needs more jack-o’-lanterns. {n} pumpkins, please.'},
+      {k:'bones',item:'bone',n:[3,3],t:'A customer wants old bones. Don’t ask me why, I didn’t. {n}?'},
+      {k:'carp',item:'ghostcarp',n:[1,2],t:'Ghost carp scales make the best shimmer dust. {n}, if you would.'}],
+    rewards:[
+      {name:'Friend Discount',desc:'10% off everything at Hazel’s stall.',perk:'discount'},
+      {name:'Black Cat Statue',desc:'Mind the cat. Now it minds your house.',deco:'cat'},
+      {name:'Good Customer',desc:'Hazel pays 20% more for everything you sell.',perk:'bonus'},
+      {name:'Crystal Ball',desc:'The mist inside swirls when no one is looking.',deco:'crystalball'},
+      {name:'Starry Hat',desc:'A violet witch hat stitched with silver stars.',hat:'Starry Hat'}]},
+};
+function rel(g){S.rel=S.rel||{};return S.rel[g]||(S.rel[g]={pts:0,lvl:0,gt:-1e9,last:[]});}
+function perk(p){return !!(S&&S.perks&&S.perks[p]);}
+function priceOf(id){return Math.round(ITEMS[id].price*(perk('discount')?.9:1));}
+function sellOf(id){return Math.round(ITEMS[id].sell*(perk('bonus')?1.2:1));}
+function heartsHTML(g){const l=rel(g).lvl;return `<span class="hearts" aria-label="${l} of 5 hearts">${'♥'.repeat(l)}<i>${'♥'.repeat(5-l)}</i></span>`;}
+function grantFriendReward(g,lvl){
+  const r=FRIENDS[g].rewards[lvl-1]; if(!r)return;
+  if(r.deco){S.store[r.deco]=(S.store[r.deco]||0)+1;}
+  if(r.perk){S.perks=S.perks||{};S.perks[r.perk]=true;if(r.perk==='charm'){S.maxHp=125;S.hp=Math.min(S.maxHp,S.hp+25);hpDirty=true;}}
+  if(r.hat){S.hats=S.hats||[];if(!S.hats.includes(r.hat))S.hats.push(r.hat);}
+  return r;
+}
+function addFriend(g,pts){
+  const R=rel(g); R.pts+=pts; let up=null;
+  while(R.lvl<5&&R.pts>=HEART_AT[R.lvl+1]){R.lvl++;up=grantFriendReward(g,R.lvl);}
+  floater(`+${pts} ♥ ${GIVERS[g].short}`,player.x,2.9,player.z,'#ff8fb0',15);
+  if(up){const how=up.deco?' It is in Build, ready to place.':up.hat?' Wear it from Pause → Change appearance.':'';
+    setTimeout(()=>{banner(GIVERS[g].short+' ♥ '+R.lvl);sfx('quest');toast(`Friendship level ${R.lvl} with ${GIVERS[g].short}! You got ${up.name}.${how}`);},700);}
+  save();
+}
+function makeFavor(g){
+  const F=FRIENDS[g], R=rel(g);
+  const pool=F.favors.filter(f=>!R.last.includes(f.k)); const f=pool[randi(0,pool.length-1)]||F.favors[0];
+  R.last=[f.k,...R.last].slice(0,3);
+  const n=randi(f.n[0],f.n[1]), it=ITEMS[f.item], val=(it.sell||10)*n;
+  return {id:'odd',favor:f.k,giver:g,title:'Favor: '+it.name,text:f.t.replace('{n}',n),need:{[f.item]:n},reward:{coin:Math.round(val*1.6+60)},rel:FAVOR_PTS,
+    hint:needHint(f.item)+' Favors build your friendship with '+GIVERS[g].short+'.'};
+}
+function giftPoints(g,id){const F=FRIENDS[g];return F.loves.includes(id)?25:F.likes.includes(id)?12:5;}
+function openFriend(g,msg){
+  sfx('ui');
+  const G=GIVERS[g], R=rel(g), F=FRIENDS[g], next=HEART_AT[R.lvl+1];
+  const wait=Math.max(0,Math.ceil((R.gt+GIFT_WAIT-S.t)/60));
+  let body=`<div class="detail" style="align-items:center"><div style="flex:1"><b>${esc(G.name)}</b> ${heartsHTML(g)}<p>${R.lvl>=5?'Best friends. Nothing left to unlock.':`${R.pts} / ${next} friendship to the next heart.`}</p>${msg?`<p style="color:var(--glow)">${esc(msg)}</p>`:''}</div></div>`;
+  body+=`<p class="hint">Raise friendship by finishing ${esc(G.short)}’s quests (+${STORY_PTS}), doing favors (+${FAVOR_PTS}) and giving gifts once every few minutes. ${esc(G.short)} loves ${F.loves.map(k=>ITEMS[k].name).join(' and ')}.</p>`;
+  body+=`<div class="rows">${F.rewards.map((r,i)=>{const got=R.lvl>i;return `<div class="row" style="grid-template-columns:auto 1fr auto"><span class="hearts sm">${'♥'.repeat(i+1)}</span><div class="nm">${esc(r.name)}<small>${esc(r.desc)}</small></div><span class="${got?'got':'muted'}" style="font-weight:800;font-size:12px">${got?'Unlocked':'Locked'}</span></div>`;}).join('')}</div>`;
+  const gifts=Object.keys(S.inv).filter(k=>ITEMS[k]&&k!=='kit');
+  if(wait>0)body+=`<p class="hint">${esc(G.short)} already got a gift. Try again in about ${wait} minute${wait>1?'s':''}.</p>`;
+  else body+=gifts.length?`<h3 class="sub">Give a gift</h3><div class="bag">${gifts.map(k=>{const p=giftPoints(g,k);return `<button class="slot" data-gift="${k}" aria-label="Give ${esc(ITEMS[k].name)}"><img src="${ICON[k]}" alt=""><b>${inv(k)}</b>${p>5?`<em>${p>12?'♥♥':'♥'}</em>`:''}</button>`;}).join('')}</div>`:`<p class="hint">Your bag is empty, so there is nothing to give yet.</p>`;
+  openModal(win('Friendship',body+`<div class="acts" style="margin-top:8px"><button class="btn" id="fBack">Back</button></div>`),'friend');
+  $('#fBack').onclick=()=>{if(g==='hazel')openShop('friend');else talkTo(g);};
+  modal.querySelectorAll('[data-gift]').forEach(b=>b.onclick=()=>{const k=b.dataset.gift;if(!inv(k))return;take(k,1);R.gt=S.t;const p=giftPoints(g,k);
+    const line=p>12?`“${ITEMS[k].name}! You remembered. Thank you!”`:p>5?`“Oh, how kind. I like these.”`:`“Thank you. I’ll find a use for it.”`;
+    sfx(p>12?'catch':'pick');addFriend(g,p);updateTracker();openFriend(g,line);});
+}
 function talkTo(g){
   sfx('ui');
   const G=GIVERS[g]; let q=giverQuest(g);
-  if(!q){S.odds[g]=makeOddJob(g);q=S.odds[g];}
-  const rewardsHTML=r=>`<div class="rw"><span>Rewards</span>${Object.entries(r).map(([k,v])=>`<span class="pill"><img src="${ICON[k]}" alt="">${k==='coin'?fmt(v):v+'× '+esc(ITEMS[k].name)}</span>`).join('')}</div>`;
+  if(!q){S.odds[g]=S.odds[g]||makeFavor(g);q=S.odds[g];}
+  const fa={label:'Friendship ♥',fn:()=>openFriend(g)};
+  const rewardsHTML=r=>`<div class="rw"><span>Rewards</span>${Object.entries(r).map(([k,v])=>`<span class="pill"><img src="${ICON[k]}" alt="">${k==='coin'?fmt(v):v+'× '+esc(ITEMS[k].name)}</span>`).join('')}<span class="pill heart">♥ +${q.id==='odd'?(q.rel||FAVOR_PTS):STORY_PTS} friendship</span></div>`;
   const lore=g==='wick'?WICK_LORE:LORE;
   const ask={label:'Ask about the area',fn:()=>{openDialog({who:G.name,text:lore[randi(0,lore.length-1)],acts:[{label:'Back',fn:()=>talkTo(g)},{label:'Thanks, '+G.short,fn:closeModal}]});}};
   if(!S.qact[g]){
-    openDialog({who:G.name,title:q.title,text:q.text,extra:rewardsHTML(q.reward),acts:[{label:'Accept',primary:true,fn:()=>{S.qact[g]=q.id;S.track=g;sfx('quest');toast('New quest: '+q.title);updateTracker();closeModal();save();}},ask,{label:'Maybe later',fn:closeModal}]});
+    openDialog({who:G.name+' '+heartsHTML(g),title:q.title,text:q.text,extra:rewardsHTML(q.reward),acts:[{label:'Accept',primary:true,fn:()=>{S.qact[g]=q.id;S.track=g;sfx('quest');toast((q.id==='odd'?'New favor: ':'New quest: ')+q.title);updateTracker();closeModal();save();}},fa,ask,{label:'Maybe later',fn:closeModal}]});
   }else if(questReady(q)){
     openDialog({who:G.name,title:q.title,text:g==='wick'?'Ha! I knew you had it in you. Here, this is for your trouble.':'Well, look at that! You actually did it. Here, take this, you earned it.',extra:rewardsHTML(q.reward),acts:[{label:'Hand in',primary:true,fn:()=>{
       if(q.need)pay(q.need);
@@ -2196,13 +2329,14 @@ function talkTo(g){
       grantAll(q.reward,{x:player.x,y:2.4,z:player.z});
       sfx('quest');toast('Quest complete: '+q.title,'coin'); heroAct('victory',{speed:1.3});
       if(q.id==='odd'){S.oddDone++;S.odds[g]=null;}else S.qdone[q.id]=true;
+      addFriend(g,q.id==='odd'?(q.rel||FAVOR_PTS):STORY_PTS);
       S.qact[g]=null; if(S.track===g){const o=Object.keys(GIVERS).find(x=>S.qact[x]);if(o)S.track=o;}
       updateTracker(); save(); closeModal();
-      setTimeout(()=>{if(mode==='play'&&!modalOpen&&Math.hypot(player.x-P[g].x,player.z-P[g].z)<4)talkTo(g);},450);
-    }},ask]});
+      if(storyLeft(g))setTimeout(()=>{if(mode==='play'&&!modalOpen&&Math.hypot(player.x-P[g].x,player.z-P[g].z)<4)talkTo(g);},450);
+    }},fa,ask]});
   }else{
     const pg=questProgress(q).map(p=>`${esc(p.label)}: <b>${p.have}/${p.need}</b>`).join(' · ');
-    openDialog({who:G.name,title:q.title,text:esc(q.hint||'')+'<br><span class="muted" style="font-size:13px">'+pg+'</span>',raw:true,acts:[ask,{label:'On my way',fn:closeModal}]});
+    openDialog({who:G.name,title:q.title,text:esc(q.hint||'')+'<br><span class="muted" style="font-size:13px">'+pg+'</span>',raw:true,acts:[fa,ask,{label:'On my way',fn:closeModal}]});
   }
 }
 function talkPete(){talkTo('pete');}
@@ -2210,10 +2344,10 @@ function updateTracker(){
   if(!S)return;
   const el=$('#tracker');
   const act=Object.keys(GIVERS).filter(g=>S.qact[g]).sort((a,b)=>(a===S.track?-1:b===S.track?1:0));
-  if(!act.length){el.innerHTML=`<b>Quests available</b>Talk to Pumpkin Pete or Keeper Wick in the village plaza.<div class="navd" id="navDist"></div><div class="gtip" id="gTip" hidden></div>`;}
+  if(!act.length){const any=Object.keys(GIVERS).some(storyLeft);el.innerHTML=any?`<b>Quests available</b>Talk to Pumpkin Pete or Keeper Wick in the village plaza.`:`<b>All quests done</b>Ask Pete, Wick or Hazel for a favor to grow your friendships.`;el.innerHTML+=`<div class="navd" id="navDist"></div><div class="gtip" id="gTip" hidden></div>`;}
   else el.innerHTML=act.map((g,i)=>{const q=giverQuest(g),ready=questReady(q);
     return `<div class="tq ${i?'sub':''}"><b>${esc(q.title)}</b>`+(i?'':questProgress(q).map(p=>`<div>${esc(p.label)} <span class="pg ${p.have>=p.need?'done':''}">${p.have}/${p.need}</span></div>`).join(''))+(ready?`<div class="done"><b style="display:inline;font-family:inherit">Return to ${GIVERS[g].short}</b></div>`:'')+(i?'':'<div class="navd" id="navDist"></div>')+`</div>`;}).join('')+'<div class="gtip" id="gTip" hidden></div>'+(act.length>1?'<div class="tswap">Tap to switch quest</div>':'');
-  for(const g of Object.keys(GIVERS)){const m=MARKS[g];if(!m)continue;const q=giverQuest(g);const has=!S.qact[g];m.visible=has||(q&&questReady(q));m.userData.set(has?'!':'?');}
+  for(const g of Object.keys(GIVERS)){const m=MARKS[g];if(!m)continue;const q=giverQuest(g);const has=!S.qact[g]&&storyLeft(g);m.visible=has||(!!S.qact[g]&&q&&questReady(q));m.userData.set(has?'!':'?');}
   navT=0;
 }
 /* ---------- first-time guides: what to tap for upgrades, placing items and using the bag ---------- */
@@ -2279,7 +2413,7 @@ function questGoal(q){
   if(q.flag==='lighthouse')return {x:LH_DOOR.x,z:LH_DOOR.z,label:'Old Lighthouse'};
   if(q.flag==='house2'){
     const req=HOUSE_UP[2]||{}, short=k=>inv(k)<(req[k]||0);
-    if(short('kit')&&S.coins>=ITEMS.kit.price)return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:"Buy a kit at Hazel's"};
+    if(short('kit')&&S.coins>=priceOf('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:"Buy a kit at Hazel's"};
     if(short('kit')&&!S.qdone.gems)return S.qact.wick==='gems'?questGoal(QBY.gems)||{x:P.wick.x,z:P.wick.z,r:4,label:'Return to Wick'}:{x:P.wick.x,z:P.wick.z,r:4,label:'Ask Wick for work (he pays in kits)'};
     if(short('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:'Save up '+fmt(ITEMS.kit.price)+' coins for a kit'};
     if(short('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,r:10,label:'Chop trees for wood'};}
@@ -2303,7 +2437,7 @@ function navTarget(){
     const t=questGoal(q); if(t)return t;
   }
   let best=null,bd=1e9;
-  for(const g of Object.keys(GIVERS)){if(S.qact[g])continue;const d=Math.hypot(P[g].x-player.x,P[g].z-player.z);if(d<bd){bd=d;best={x:P[g].x,z:P[g].z,r:4,label:'Talk to '+GIVERS[g].short}};}
+  for(const g of Object.keys(GIVERS)){if(S.qact[g]||!storyLeft(g))continue;const d=Math.hypot(P[g].x-player.x,P[g].z-player.z);if(d<bd){bd=d;best={x:P[g].x,z:P[g].z,r:4,label:'Talk to '+GIVERS[g].short}};}
   return best;
 }
 let navBeam=null, navArrow=null;
@@ -2391,11 +2525,11 @@ function confirmPlace(){
   if(!placing.ok){toast(placing.inside?'Can’t place there. Keep clear of walls, the fireplace and the door.':'Can’t place there. Stay inside your yard and clear of the house.');sfx('error');return;}
   const id=placing.id;
   if((S.store[id]||0)>0)S.store[id]--;
-  else if(canAfford(DECOS[id].cost))pay(DECOS[id].cost);
+  else if(!DECOS[id].unique&&canAfford(DECOS[id].cost))pay(DECOS[id].cost);
   else{toast('Not enough materials for '+DECOS[id].name);sfx('error');return;}
   const o=placeDecoObj({id,x:placing.x,z:placing.z,rot:placing.rot,inside:placing.inside}); sfx('build'); const T=S.tips||(S.tips={}); T.place=true; if(id==='lamp')T.lamp=true; burst(o.x,.6,o.z,'#ffd27a',12,2,.3,.6);
   updatePlaceUI(); save();
-  if(!(S.store[id]>0)&&!canAfford(DECOS[id].cost)){stopPlacing();toast(DECOS[id].name+' placed');}
+  if(!(S.store[id]>0)&&(DECOS[id].unique||!canAfford(DECOS[id].cost))){stopPlacing();toast(DECOS[id].name+' placed');}
 }
 function stopPlacing(){if(!placing)return;scene.remove(ghost);ghost=null;placing=null;$('#placeui').hidden=true;}
 function upgradeHouse(){
@@ -2429,7 +2563,7 @@ modal.addEventListener('pointerdown',e=>{if(e.target===modal&&modalKind!=='pause
 function win(label,body,extraCls=''){return `<div class="panel win ${extraCls}" role="dialog" aria-label="${esc(label)}"><span class="tab-label">${esc(label)}</span><button class="btn x" aria-label="Close">✕</button><div class="body">${body}</div></div>`;}
 function openDialog(o){
   const text=o.raw?o.text:esc(o.text);
-  openModal(`<div class="panel dlg" role="dialog"><div><div class="who">${esc(o.who)}${o.title?` <span class="muted" style="font-size:13px;font-family:var(--f-body)">· ${esc(o.title)}</span>`:''}</div><p>${text}</p>${o.extra||''}</div><div class="acts">${o.acts.map((a,i)=>`<button class="btn ${a.primary?'primary':''}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div></div>`,'dialog');
+  openModal(`<div class="panel dlg" role="dialog"><div><div class="who">${o.who.includes('class="hearts"')?o.who:esc(o.who)}${o.title?` <span class="muted" style="font-size:13px;font-family:var(--f-body)">· ${esc(o.title)}</span>`:''}</div><p>${text}</p>${o.extra||''}</div><div class="acts">${o.acts.map((a,i)=>`<button class="btn ${a.primary?'primary':''}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div></div>`,'dialog');
   modal.style.placeItems='end center';
   modal.querySelectorAll('.acts button').forEach(b=>b.onclick=()=>{sfx('ui');o.acts[+b.dataset.i].fn();});
   const first=modal.querySelector('.acts button'); first&&first.focus();
@@ -2438,17 +2572,23 @@ function openDialog(o){
 // ---- shop
 function openShop(tab='buy'){
   sfx('ui');
-  let body=`<div class="tabs"><button data-t="buy" class="${tab==='buy'?'on':''}">Buy</button><button data-t="sell" class="${tab==='sell'?'on':''}">Sell</button><span style="flex:1"></span><span class="coin"><img src="${ICON.coin}" alt="">${fmt(S.coins)}</span></div>`;
+  let body=`<div class="tabs"><button data-t="buy" class="${tab==='buy'?'on':''}">Buy</button><button data-t="sell" class="${tab==='sell'?'on':''}">Sell</button><button data-t="friend" class="${tab==='friend'?'on':''}">Friendship ♥</button><span style="flex:1"></span><span class="coin"><img src="${ICON.coin}" alt="">${fmt(S.coins)}</span></div>`;
   if(tab==='buy'){
-    body+=`<p class="hint">“Welcome, welcome! Mind the cat. Everything here is fresh, or at least freshly dusted.”</p><div class="rows">`+SHOP.map(id=>{const it=ITEMS[id];const owned=id==='pickaxe'&&S.pick==='basic';return `<div class="row"><img class="icon" src="${ICON[id]}" alt=""><div class="nm">${esc(it.name)}${it.qty?' ×'+it.qty:''}<small>${esc(it.desc)}</small></div><span class="coin"><img src="${ICON.coin}" alt="">${fmt(it.price)}</span><button class="btn ${S.coins>=it.price&&!owned?'primary':''}" data-buy="${id}" ${owned||S.coins<it.price?'disabled':''}>${owned?'Owned':'Buy'}</button></div>`;}).join('')+`</div>`;
+    body+=`<p class="hint">“Welcome, welcome! Mind the cat. Everything here is fresh, or at least freshly dusted.”</p><div class="rows">`+SHOP.map(id=>{const it=ITEMS[id];const owned=id==='pickaxe'&&S.pick==='basic', pr=priceOf(id);return `<div class="row"><img class="icon" src="${ICON[id]}" alt=""><div class="nm">${esc(it.name)}${it.qty?' ×'+it.qty:''}<small>${esc(it.desc)}</small></div><span class="coin"><img src="${ICON.coin}" alt="">${fmt(pr)}</span><button class="btn ${S.coins>=pr&&!owned?'primary':''}" data-buy="${id}" ${owned||S.coins<pr?'disabled':''}>${owned?'Owned':'Buy'}</button></div>`;}).join('')+`</div>`;
+  }else if(tab==='friend'){
+    const R=rel('hazel'), q=S.qact.hazel?giverQuest('hazel'):null;
+    body+=`<div class="detail" style="align-items:center"><div style="flex:1"><b>Hazel</b> ${heartsHTML('hazel')}<p>${esc(FRIENDS.hazel.hi[randi(0,2)])}</p></div></div>`;
+    body+=`<div class="rows"><button class="btn primary" id="hzFavor">${q?(questReady(q)?'Hand in: '+esc(q.title):'Current favor: '+esc(q.title)):'Ask Hazel for a favor'}</button><button class="btn" id="hzFriend">Gifts and rewards</button></div>`;
+    body+=`<p class="hint">${perk('discount')?'Friend discount: 10% off. ':''}${perk('bonus')?'Good customer: +20% when you sell. ':''}Hazel’s rewards include a discount, better prices, a black cat statue, a crystal ball and a hat.</p>`;
   }else{
     const sell=Object.keys(S.inv).filter(k=>ITEMS[k]&&ITEMS[k].sell>0);
-    body+=sell.length?`<div class="rows">`+sell.map(id=>`<div class="row"><img class="icon" src="${ICON[id]}" alt=""><div class="nm">${esc(ITEMS[id].name)} <span class="muted">×${inv(id)}</span><small>${fmt(ITEMS[id].sell)} each</small></div><button class="btn" data-sell="${id}" data-n="1">Sell 1</button><button class="btn primary" data-sell="${id}" data-n="all">Sell all · ${fmt(ITEMS[id].sell*inv(id))}</button></div>`).join('')+`</div>`:`<p class="hint">Nothing to sell yet. Hazel buys fish, ore, pumpkins and bones.</p>`;
+    body+=sell.length?`<div class="rows">`+sell.map(id=>`<div class="row"><img class="icon" src="${ICON[id]}" alt=""><div class="nm">${esc(ITEMS[id].name)} <span class="muted">×${inv(id)}</span><small>${fmt(sellOf(id))} each</small></div><button class="btn" data-sell="${id}" data-n="1">Sell 1</button><button class="btn primary" data-sell="${id}" data-n="all">Sell all · ${fmt(sellOf(id)*inv(id))}</button></div>`).join('')+`</div>`:`<p class="hint">Nothing to sell yet. Hazel buys fish, ore, pumpkins and bones.</p>`;
   }
   openModal(win('Shop / Merchant',body),'shop');
   modal.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>openShop(b.dataset.t));
-  modal.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const id=b.dataset.buy,it=ITEMS[id];if(S.coins<it.price)return;S.coins-=it.price;if(id==='pickaxe'){S.pick='basic';TOOLS.pick.children[1].material=M('#8fd0ff',{metalness:.7,roughness:.3,emissive:'#1a3a5a'});}else give(id,it.qty||1,true);sfx('coin');toast('Bought '+it.name,id);refreshHUD();save();openShop('buy');});
-  modal.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>{const id=b.dataset.sell;const n=b.dataset.n==='all'?inv(id):1;take(id,n);S.coins+=n*ITEMS[id].sell;sfx('coin');refreshHUD();updateTracker();save();openShop('sell');});
+  const hf=$('#hzFavor'); if(hf)hf.onclick=()=>talkTo('hazel'); const hr=$('#hzFriend'); if(hr)hr.onclick=()=>openFriend('hazel');
+  modal.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const id=b.dataset.buy,it=ITEMS[id],pr=priceOf(id);if(S.coins<pr)return;S.coins-=pr;if(id==='pickaxe'){S.pick='basic';TOOLS.pick.children[1].material=M('#8fd0ff',{metalness:.7,roughness:.3,emissive:'#1a3a5a'});}else give(id,it.qty||1,true);sfx('coin');toast('Bought '+it.name,id);refreshHUD();save();openShop('buy');});
+  modal.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>{const id=b.dataset.sell;const n=b.dataset.n==='all'?inv(id):1;take(id,n);S.coins+=n*sellOf(id);sfx('coin');refreshHUD();updateTracker();save();openShop('sell');});
 }
 // ---- bag
 function openBag(sel){
@@ -2471,14 +2611,16 @@ function openQuests(){
   for(const g of Object.keys(GIVERS)){
     const q=giverQuest(g), G=GIVERS[g];
     if(S.qact[g]&&q){body+=`<div class="q"><b>${esc(q.title)}</b> <span class="muted" style="font-size:12px">${esc(G.name.toUpperCase())}${g===S.track?' · TRACKED':''}</span><p>${esc(q.text)}</p><p>${questProgress(q).map(p=>`${esc(p.label)}: <b style="color:${p.have>=p.need?'var(--good)':'var(--text)'}">${p.have}/${p.need}</b>`).join(' · ')}</p><p>${esc(q.hint||'')}</p>${g!==S.track?`<button class="btn" data-track="${g}">Track this quest</button>`:''}</div>`;}
-    else body+=`<div class="q"><b>${esc(G.name)} has ${q?'a new quest':'odd jobs'}</b><p>Find ${esc(G.short)} in the village plaza. The golden light shows the way.</p></div>`;
+    else if(q)body+=`<div class="q"><b>${esc(G.name)} has a new quest</b><p>Find ${esc(G.short)} in the village plaza. The arrow shows the way.</p></div>`;
   }
+  body+=`<h3 class="sub">Friendship</h3>`+Object.keys(GIVERS).map(g=>{const R=rel(g),nx=FRIENDS[g].rewards[R.lvl];return `<div class="q fr"><b>${esc(GIVERS[g].name)}</b> ${heartsHTML(g)}<p>${nx?'Next: '+esc(nx.name)+' at '+HEART_AT[R.lvl+1]+' friendship ('+R.pts+' now)':'Best friends'}</p><button class="btn" data-fr="${g}">Gifts and rewards</button></div>`;}).join('')+`<p class="hint">Favors and gifts are the only things that repeat. Talk to a villager${'’'}s Friendship option, or visit Hazel’s Friendship tab.</p>`;
   const done=QUESTS.filter(q=>S.qdone[q.id]);
-  if(done.length||S.oddDone)body+=`<h3 style="margin:6px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;color:var(--muted)">COMPLETED</h3><div class="ql">${done.map(d=>`<div class="q done"><b>${esc(d.title)}</b> <span class="muted" style="font-size:12px">${esc(GIVERS[d.giver].short)}</span></div>`).join('')}${S.oddDone?`<div class="q done"><b>Odd jobs finished: ${S.oddDone}</b></div>`:''}</div>`;
+  if(done.length||S.oddDone)body+=`<h3 style="margin:6px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;color:var(--muted)">COMPLETED</h3><div class="ql">${done.map(d=>`<div class="q done"><b>${esc(d.title)}</b> <span class="muted" style="font-size:12px">${esc(GIVERS[d.giver].short)}</span></div>`).join('')}${S.oddDone?`<div class="q done"><b>Favors done: ${S.oddDone}</b></div>`:''}</div>`;
   const disc=REGIONS.filter(r=>S.disc[r.id]).length;
   body+=`<p class="hint">Places discovered: ${disc} of ${REGIONS.length} · Chests found: ${Object.keys(S.chests).length} of ${CHESTS.length}</p>`;
   openModal(win('Quests',`<div class="ql">${body}</div>`),'quests');
   modal.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{S.track=b.dataset.track;updateTracker();openQuests();});
+  modal.querySelectorAll('[data-fr]').forEach(b=>b.onclick=()=>openFriend(b.dataset.fr));
 }
 // ---- travel
 function openTravel(){
@@ -2503,8 +2645,8 @@ function openBuild(tab){
     else body+=`<p class="hint">Your house is fully upgraded. Fill the yard with decorations!</p>`;
     body+=`<p class="hint">House Upgrade Kits come from Hazel’s stall. Stone, amethyst and moonstone come from Glimmer Cave.</p>`;
   }else{
-    const ids=Object.keys(DECOS).filter(k=>{const d=DECOS[k];return inside?(d.where!=='out'&&(d.tabIn||d.tab)===buildTab):(d.where!=='in'&&d.tab===buildTab);});
-    body+=`<div class="grid">${ids.map(id=>{const d=DECOS[id],own=S.store[id]||0,ok=own>0||canAfford(d.cost);return `<div class="card"><img class="icon" src="${ICON['deco_'+id]}" alt=""><div class="nm">${esc(d.name)}</div><div class="cost">${own?`<span>${own} in storage</span>`:costHTML(d.cost)}</div><button class="btn ${ok&&home?'primary':''}" data-p="${id}" ${ok&&home?'':'disabled'}>Place</button></div>`;}).join('')}</div>`;
+    const ids=Object.keys(DECOS).filter(k=>{const d=DECOS[k];return (!d.unique||(S.store[k]||0)>0)&&(inside?(d.where!=='out'&&(d.tabIn||d.tab)===buildTab):(d.where!=='in'&&d.tab===buildTab));});
+    body+=`<div class="grid">${ids.map(id=>{const d=DECOS[id],own=S.store[id]||0,ok=own>0||(!d.unique&&canAfford(d.cost));return `<div class="card"><img class="icon" src="${ICON['deco_'+id]}" alt=""><div class="nm">${esc(d.name)}</div><div class="cost">${own?`<span>${own} in storage</span>`:costHTML(d.cost)}</div><button class="btn ${ok&&home?'primary':''}" data-p="${id}" ${ok&&home?'':'disabled'}>Place</button></div>`;}).join('')}</div>`;
     const near=(inside?indecoObjs:decoObjs).filter(d=>Math.hypot(d.x-player.x,d.z-player.z)<3);
     if(home)body+=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" id="pickUp" ${near.length?'':'disabled'}>Pick up nearest decoration</button><span class="hint">${near.length?'Picked-up items go to storage and can be placed again for free.':'Stand next to a decoration to pick it up.'}</span></div>`;
   }
@@ -2550,7 +2692,8 @@ function openHow(fromPause){
     <kbd class="k">Door</kbd><span>Walk up to your front door and press E to go inside. Press B indoors to decorate the rooms; they grow when you upgrade.</span>
   </div>
   <p class="hint">On a phone or tablet, use the joystick and the round USE button. Scroll or pinch-free zoom with the mouse wheel on desktop.</p>
-  <p class="hint">Start by talking to Pumpkin Pete in the plaza. Sell your haul to Hazel, buy kits and seeds, and turn your cottage into a manor.</p>`;
+  <p class="hint">Start by talking to Pumpkin Pete in the plaza. Sell your haul to Hazel, buy kits and seeds, and turn your cottage into a manor.</p>
+  <p class="hint">Make friends with Pete, Wick and Hazel. Their quests, favors and gifts fill up friendship hearts, and every heart unlocks a reward you can’t buy: decorations, hats and handy perks.</p>`;
   openModal(win('How to Play',body),'how');
   if(fromPause){modal.querySelector('.x').onclick=()=>openPause();}
 }
@@ -2601,7 +2744,7 @@ function drawMini(dt){
   dot(P.pete.x,P.pete.z,4.5,peteMark&&peteMark.visible?'#ffd27a':'#c98a55','#3a1505');
   dot(P.wick.x,P.wick.z,4.5,MARKS.wick&&MARKS.wick.visible?'#ffd27a':'#8aa0c8','#141a30');
   for(const sk of SKELS)if(sk.alive)dot(sk.x,sk.z,2.6,'#ff5a4a');
-  for(const ch of CHESTS)if(!S.chests[ch.id]&&Math.hypot(ch.x-player.x,ch.z-player.z)<22)dot(ch.x,ch.z,3,'#ffe08a');
+  for(const ch of CHESTS)if(!S.chests[ch.id]&&(perk('spyglass')||Math.hypot(ch.x-player.x,ch.z-player.z)<22))dot(ch.x,ch.z,3,'#ffe08a');
   for(const r of REGIONS)if(!S.disc[r.id]){g.fillStyle='#ffffff55';g.font='bold 9px sans-serif';g.textAlign='center';g.fillText('?',cx+r.x*s,cy+r.z*s+3);}
   g.setTransform(1,0,0,1,0,0);
   if(NAV){ // goal: a soft circle over the area, or an arrow on the rim when it is off the map
@@ -2781,7 +2924,7 @@ function renderCreateOpts(){
   $('#optStyle').hidden=det; $('#modelNote').hidden=!det;
   const girl=LOOK.model==='Girl', ready=girl?HEROINE:HERO;
   $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. The colors below tint her hair, skin and clothes.':'He has spiky hair. More hair styles are coming.';
-  sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); if(!LOOK.pants)LOOK.pants=PANTS0; if(!LOOK.shoes)LOOK.shoes=SHOES0; sw('#oPants',LOOK_OPTS.pants,'pants'); sw('#oShoes',LOOK_OPTS.shoes,'shoes'); ch('#oHat',LOOK_OPTS.hat,'hat');
+  sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); if(!LOOK.pants)LOOK.pants=PANTS0; if(!LOOK.shoes)LOOK.shoes=SHOES0; sw('#oPants',LOOK_OPTS.pants,'pants'); sw('#oShoes',LOOK_OPTS.shoes,'shoes'); ch('#oHat',LOOK_OPTS.hat.concat(createEdit&&S&&S.hats?S.hats:[]),'hat');
 }
 $('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),pants:p(LOOK_OPTS.pants),shoes:p(LOOK_OPTS.shoes),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
 $('#bBack').onclick=()=>{if(createEdit){mode='play';$('#create').hidden=true;$('#hud').hidden=false;}else toTitle();};
@@ -2818,6 +2961,7 @@ function applyState(){
   CHESTS.forEach(ch=>{const o=!!S.chests[ch.id];ch.g.userData.lid.rotation.x=o?-1.6:0;ch.sp.material.opacity=o?0:.6;});
   if(S.pick==='basic')TOOLS.pick.children[1].material=M('#8fd0ff',{metalness:.7,roughness:.3,emissive:'#1a3a5a'});
   player.x=S.pos.x; player.z=S.pos.z; player.dead=false; player.y=heightAt(player.x,player.z);
+  if(perk('charm'))S.maxHp=Math.max(S.maxHp,125);
   migrateQuests(); refreshHUD(); updateTracker();
 }
 function startGame(fresh){
