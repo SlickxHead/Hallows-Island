@@ -2,7 +2,7 @@
 
 A cozy-spooky 3D top-down island adventure that runs in the browser and installs on your phone as a full-screen app.
 
-Create your character, then explore a moonlit island: take quests from Pumpkin Pete, fish off the dock, mine glowing crystals, chop trees for wood, harvest pumpkins, fight skeletons in the graveyard, trade with Hazel the merchant, and build, upgrade and decorate your house inside and out.
+Create your character, then explore a moonlit island: take quests from Pumpkin Pete and Keeper Wick, fish off the dock, mine glowing crystals, chop trees for wood, harvest pumpkins, fight skeletons in the graveyard, trade with Hazel the merchant, and build, upgrade and decorate your house inside and out.
 
 ## Play
 

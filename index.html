@@ -90,6 +90,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--glow);outline-o
 #tracker b{font-family:var(--f-label);display:block;font-size:13px;margin-bottom:2px}
 #tracker .pg{font-weight:800;font-variant-numeric:tabular-nums}
 #tracker .done{color:#2f6b26}
+#tracker{cursor:pointer}
+#tracker .tq.sub{margin-top:6px;padding-top:5px;border-top:1px solid #7a553044;opacity:.75}
+#tracker .navd{margin-top:3px;font-weight:800;color:#8a4a12;font-size:12px}
+#tracker .tswap{margin-top:4px;font-size:11px;opacity:.6}
 .tr{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 #mini{width:150px;height:150px;border-radius:50%;border:3px solid var(--wood-edge);box-shadow:0 0 0 2px #0009,0 8px 20px #0009;background:#0d1a33}
 #region{font-family:var(--f-label);font-weight:800;font-size:13px;letter-spacing:.06em;text-shadow:0 2px 4px #000;color:var(--parchment)}
@@ -476,13 +480,20 @@ const FISH_TABLES={
 };
 const FISH_DIFF={moonfish:[.34,1.7],perch:[.28,2.0],ghostcarp:[.25,2.2],eel:[.22,2.5],koi:[.16,2.9]};
 const QUESTS=[
-  {id:'bones',title:'Restless Graveyard',text:'The graveyard has been getting restless lately. Could you clear out the skeletons and bring back 3 old bones?',need:{bone:3},reward:{coin:500,pumpkin:1,amethyst:1},hint:'Skeletons roam the Whispering Graveyard, north of the village. Press J or Space to swing your sword.'},
-  {id:'light',title:"The Keeper's Light",text:"Nobody has climbed the old lighthouse in years. Would you go up and check that the lamp still burns?",flag:'lighthouse',reward:{coin:300,bait:3},hint:'Follow the lantern path east to the Old Lighthouse and step inside.'},
-  {id:'fish',title:'Supper by Moonlight',text:"I'm hosting a moonlit supper and I'm short on fish. Catch 2 of any kind for me?",needFish:2,reward:{coin:350,seeds:3},hint:'Fish from the end of the dock on Moonlit Beach. Press E to cast, then again when you see the bite.'},
-  {id:'pumpkins',title:'Patch Work',text:'Harvest season waits for no one. Bring me 5 pumpkins from the patch, would you?',need:{pumpkin:5},reward:{coin:400,lantern:1},hint:'The Pumpkin Patch is southwest of the village. Ripe pumpkins glow a little.'},
-  {id:'gems',title:'Glimmer in the Dark',text:'Glimmer Cave is full of amethyst. Bring me 3 and I will pay you in something useful.',need:{amethyst:3},reward:{coin:600,kit:1},hint:'Glimmer Cave is northwest. Swing at the crystal rocks out front with E.'},
-  {id:'house',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells kits, and I just gave you one.',flag:'house2',reward:{coin:800,moonstone:1},hint:'Open Build (B) near your house. The House tab shows what the upgrade needs. Chop trees for the wood.'},
-  {id:'timber',title:'Timber!',text:'Half the fences in the village are falling over. Chop down a few trees and bring me 8 pieces of wood?',need:{wood:8},reward:{coin:450,seeds:2,tonic:1},hint:'Walk up to any tree and press E or USE to swing your axe. Three chops fells it, and trees grow back after a couple of minutes.'},
+  {id:'bones',giver:'wick',title:'Restless Graveyard',text:'The graveyard has been getting restless lately. Could you clear out the skeletons and bring back 3 old bones?',need:{bone:3},reward:{coin:500,pumpkin:1,amethyst:1},hint:'Skeletons roam the Whispering Graveyard, north of the village. Press J or Space to swing your sword.'},
+  {id:'light',giver:'wick',title:"The Keeper's Light",text:"I kept the old lighthouse for forty years, but my knees won't manage those stairs any more. Would you climb up and check that the lamp still burns?",flag:'lighthouse',reward:{coin:300,bait:3},hint:'Follow the lantern path east to the Old Lighthouse and step inside.'},
+  {id:'fish',giver:'pete',title:'Supper by Moonlight',text:"I'm hosting a moonlit supper and I'm short on fish. Catch 2 of any kind for me?",needFish:2,reward:{coin:350,seeds:3},hint:'Fish from the end of the dock on Moonlit Beach. Press E to cast, then again when you see the bite.'},
+  {id:'pumpkins',giver:'pete',title:'Patch Work',text:'Harvest season waits for no one. Bring me 5 pumpkins from the patch, would you?',need:{pumpkin:5},reward:{coin:400,lantern:1},hint:'The Pumpkin Patch is southwest of the village. Ripe pumpkins glow a little.'},
+  {id:'gems',giver:'wick',title:'Glimmer in the Dark',text:'In my day we polished the lighthouse lens with Glimmer Cave amethyst. Bring me 3 and I will pay you in something useful.',need:{amethyst:3},reward:{coin:600,kit:1},hint:'Glimmer Cave is northwest. Swing at the crystal rocks out front with E.'},
+  {id:'house',giver:'pete',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells upgrade kits, and Keeper Wick has been known to hand them out too.',flag:'house2',reward:{coin:800,moonstone:1},hint:'Open Build (B) near your house. The House tab shows what the upgrade needs. Chop trees for the wood.'},
+  {id:'timber',giver:'pete',title:'Timber!',text:'Half the fences in the village are falling over. Chop down a few trees and bring me 8 pieces of wood?',need:{wood:8},reward:{coin:450,seeds:2,tonic:1},hint:'Walk up to any tree and press E or USE to swing your axe. Three chops fells it, and trees grow back after a couple of minutes.'},
+];
+const WICK_LORE=[
+  'Forty years I kept that lighthouse. Never once let the lamp go dark. Well, maybe once.',
+  'The skeletons in the graveyard get restless when the moon is full. Swing first, ask questions never.',
+  'Glimmer Cave goes deeper than anyone has mapped. The amethyst near the mouth is just the start.',
+  'Follow the golden light if you lose your way. It always points to whatever you are after.',
+  'Hazel will buy anything. I once sold her a boot. Just the one.',
 ];
 const LORE=[
   'Hazel runs the stall by the plaza. She will buy anything you drag home: fish, ore, even old bones.',
@@ -538,7 +549,7 @@ const LOOK_OPTS={
 ================================================================= */
 const DOCK_A=45*D2R, DOCK={t0:R(DOCK_A)-4,t1:R(DOCK_A)+15,w:1.5};
 const P={
-  village:{x:0,z:0}, house:{x:-17,z:-8}, yard:{x:-17,z:-1}, merchant:{x:12,z:1}, pete:{x:3,z:-6.5},
+  village:{x:0,z:0}, house:{x:-17,z:-8}, yard:{x:-17,z:-1}, merchant:{x:12,z:1}, pete:{x:3,z:-6.5}, wick:{x:-7,z:-4.8},
   patch:polar(140,28), graveyard:polar(-75,31), cave:polar(-133,37), beach:polar(45,48),
   lighthouse:edgePt(-20,1), falls:edgePt(-103,-10), sign:{x:-3.5,z:4.5},
 };
@@ -1151,7 +1162,7 @@ function placeValidIn(x,z,id,ignore){
 /* =================================================================
    Build the world
 ================================================================= */
-let houseObj=null, peteObj=null, hazelObj=null, peteMark=null;
+let houseObj=null, peteObj=null, hazelObj=null, wickObj=null, peteMark=null; const MARKS={};
 const SKELS=[], NODES=[], PLOTS=[], SPOTS=[], CHESTS=[], decoObjs=[], indecoObjs=[];
 const ZONES=[];
 function zone(x,z,r){ZONES.push({x,z,r});}
@@ -1197,7 +1208,12 @@ function buildWorld(){
   peteObj=buildCharacter({skin:'#c98a55',hair:'#2a1c14',style:'Short',outfit:'#5a4026',hat:'Witch Hat'},{pumpkinHead:true,noPack:true,scarf:'#7a2f2a',band:'#7a2f2a'});
   peteObj.position.set(P.pete.x,.5,P.pete.z); peteObj.rotation.y=-.3; scene.add(peteObj); addCol(P.pete.x,P.pete.z,.6);
   const lp=buildLantern(true); lp.position.set(P.pete.x-1.4,.5,P.pete.z-.6); scene.add(lp);
-  peteMark=makeMarker(); peteMark.position.set(P.pete.x,3.6,P.pete.z); scene.add(peteMark);
+  peteMark=makeMarker(); peteMark.position.set(P.pete.x,3.6,P.pete.z); scene.add(peteMark); MARKS.pete=peteMark;
+  wickObj=buildCharacter({skin:'#e3b08c',hair:'#e6e6ee',style:'Short',outfit:'#2e3d5a',hat:'Beanie'},{noPack:true,scarf:'#d9a441'});
+  wickObj.position.set(P.wick.x,.5,P.wick.z); wickObj.rotation.y=.9; scene.add(wickObj); addCol(P.wick.x,P.wick.z,.6);
+  {const wl=buildLantern(false); wl.scale.setScalar(.9); wl.rotation.x=-Math.PI/2; wickObj.userData.P.hand.add(wl); wickObj.userData.P.armR.rotation.x=-.5;}
+  const wb=new THREE.Group(); mk(Box(1.3,.45,.6),M('#6b4a2e'),0,.22,0,wb); mk(Box(.7,.08,.5),M('#8a6038'),0,.5,0,wb); wb.position.set(P.wick.x-1.3,.5,P.wick.z-.5); wb.rotation.y=.9; scene.add(wb); addCol(P.wick.x-1.3,P.wick.z-.5,.6);
+  MARKS.wick=makeMarker(); MARKS.wick.position.set(P.wick.x,3.6,P.wick.z); scene.add(MARKS.wick);
   hazelObj=buildCharacter({skin:'#f2cfae',hair:'#ecd28d',style:'Long',outfit:'#3b2b4a',hat:'Witch Hat'},{noPack:true,scarf:'#a77bff',band:'#a77bff'});
   hazelObj.position.set(P.merchant.x,.5,P.merchant.z-1.4); scene.add(hazelObj);
 
@@ -1386,7 +1402,7 @@ function buildLighthouse(){
   addCol(c.x,c.z,2.4);
   plight('#ffd27a',2,26,c.x,10,c.z,.05);
   const dx=c.x+Math.cos(toC)*2.6,dz=c.z+Math.sin(toC)*2.6;
-  INTER.push({x:dx,z:dz,r:2,label:()=>'Climb the lighthouse',act:climbLighthouse});
+  LH_DOOR={x:dx,z:dz}; INTER.push({x:dx,z:dz,r:2,label:()=>'Climb the lighthouse',act:climbLighthouse});
   const ra=(-12)*D2R, st=polar(-12,R(ra)+1.9), wt=polar(-12,R(ra)+7.5);
   SPOTS.push({x:st.x,z:st.z,wx:wt.x,wz:wt.z,wy:.02,table:'rocks',name:'the rocks'});
   const rr=buildRock(1.3,'#5b5866'); rr.position.set(st.x+Math.cos(ra)*1.5,.1,st.z+Math.sin(ra)*1.5); scene.add(rr);
@@ -1638,7 +1654,7 @@ function renderIcons(){
 const SAVE_KEY='hallows-island-save-v1';
 let S=null;
 function newState(name,look){
-  return {name,look,coins:200,inv:{tonic:1},hp:100,maxHp:100,qi:0,qActive:false,flags:{},odd:null,oddDone:0,
+  return {name,look,coins:200,inv:{tonic:1},hp:100,maxHp:100,qdone:{},qact:{pete:null,wick:null},odds:{pete:null,wick:null},track:'pete',flags:{},oddDone:0,
     house:1,decos:[],store:{},disc:{village:true},chests:{},pick:'rusty',pos:{x:-12,z:1},
     patch:null,stats:{skel:0,fish:0,pumpkins:0,ore:0},t:0};
 }
@@ -1902,14 +1918,29 @@ function climbLighthouse(){
     S.flags.lighthouse=true;
     const was=!S.disc.lighthouse; S.disc.lighthouse=true;
     updateTracker();
-  },()=>{openDialog({who:'Old Lighthouse',text:'You climb the spiral stairs. At the top, the great lamp burns steady and warm, though there is no keeper in sight. From up here you can see the whole island: the graveyard lanterns, the falls catching moonlight, smoke curling from the village chimneys.'+(currentQuest()&&currentQuest().flag==='lighthouse'?' Pete will want to hear about this.':''),acts:[{label:'Head back down',fn:closeModal}]});});
+  },()=>{openDialog({who:'Old Lighthouse',text:'You climb the spiral stairs. At the top, the great lamp burns steady and warm, though there is no keeper in sight. From up here you can see the whole island: the graveyard lanterns, the falls catching moonlight, smoke curling from the village chimneys.'+(S.qact.wick==='light'?' Keeper Wick will want to hear about this.':''),acts:[{label:'Head back down',fn:closeModal}]});});
 }
 
 /* =================================================================
    Quests
 ================================================================= */
-function currentQuest(){if(!S)return null;if(S.qi<QUESTS.length)return QUESTS[S.qi];return S.odd;}
 function fishCount(){return Object.keys(ITEMS).filter(k=>ITEMS[k].fish).reduce((a,k)=>a+inv(k),0);}
+const GIVERS={pete:{name:'Pumpkin Pete',short:'Pete'},wick:{name:'Keeper Wick',short:'Wick'}};
+const CHAIN={pete:['pumpkins','fish','timber','house'],wick:['bones','light','gems']};
+const QBY={}; QUESTS.forEach(q=>QBY[q.id]=q);
+function migrateQuests(){ // saves from before there were two quest givers kept one list in a fixed order
+  if(S.qi===undefined)return;
+  const old=['bones','light','fish','pumpkins','gems','house','timber'];
+  S.qdone=S.qdone||{}; S.qact={pete:null,wick:null}; S.odds={pete:null,wick:null};
+  old.slice(0,S.qi).forEach(id=>S.qdone[id]=true);
+  if(S.qActive){if(S.qi<old.length){const id=old[S.qi];S.qact[QBY[id].giver]=id;S.track=QBY[id].giver;}else if(S.odd){S.odds.pete=S.odd;S.qact.pete='odd';}}
+  delete S.qi; delete S.qActive; delete S.odd;
+}
+function giverQuest(g){ // the quest this giver has active, or would offer next (null = odd job on request)
+  const a=S.qact[g]; if(a)return a==='odd'?S.odds[g]:QBY[a];
+  const id=CHAIN[g].find(id=>!S.qdone[id]); return id?QBY[id]:null;
+}
+function currentQuest(){if(!S)return null;const g=S.qact[S.track]?S.track:Object.keys(GIVERS).find(g=>S.qact[g]);return g?giverQuest(g):null;}
 function questProgress(q){
   if(!q)return [];
   if(q.need)return Object.entries(q.need).map(([k,v])=>({label:ITEMS[k].name,have:Math.min(inv(k),v),need:v}));
@@ -1919,42 +1950,106 @@ function questProgress(q){
   return [];
 }
 function questReady(q){return questProgress(q).every(p=>p.have>=p.need);}
-function makeOddJob(){
-  const opts=[{bone:3},{wood:6},{pumpkin:4},{amethyst:2},{moonfish:2},{stone:10},{perch:1},{ghostcarp:1},{eel:1}];
+function makeOddJob(g){
+  const opts=g==='wick'?[{bone:3},{amethyst:2},{stone:10},{ghostcarp:1},{eel:1}]:[{wood:6},{pumpkin:4},{moonfish:2},{perch:1},{stone:8}];
   const need=opts[randi(0,opts.length-1)];
   const val=Object.entries(need).reduce((a,[k,v])=>a+(ITEMS[k].sell||10)*v,0);
-  const k=Object.keys(need)[0];
-  return {id:'odd',title:'Odd Job: '+ITEMS[k].name,text:`Got a little errand if you're bored. I need ${need[k]} ${ITEMS[k].name.toLowerCase()}${need[k]>1&&!/s$/.test(ITEMS[k].name)?'s':''}. I'll pay better than Hazel.`,need,reward:{coin:Math.round(val*2+100)},hint:'Pete posts a new odd job each time you finish one.'};
+  const k=Object.keys(need)[0], nm=ITEMS[k].name.toLowerCase(), pl=need[k]>1&&!/s$|d$|e$/.test(nm)?'s':'';
+  const text=g==='wick'?`I could use a hand, if your legs are younger than mine. Fetch me ${need[k]} ${nm}${pl}? I pay in good coin.`:`Got a little errand if you're bored. I need ${need[k]} ${nm}${pl}. I'll pay better than Hazel.`;
+  return {id:'odd',giver:g,title:'Odd Job: '+ITEMS[k].name,text,need,reward:{coin:Math.round(val*2+100)},hint:GIVERS[g].short+' posts a new odd job each time you finish one.'};
 }
-function talkPete(){
+function talkTo(g){
   sfx('ui');
-  let q=currentQuest();
-  if(!q){S.odd=makeOddJob();q=S.odd;}
+  const G=GIVERS[g]; let q=giverQuest(g);
+  if(!q){S.odds[g]=makeOddJob(g);q=S.odds[g];}
   const rewardsHTML=r=>`<div class="rw"><span>Rewards</span>${Object.entries(r).map(([k,v])=>`<span class="pill"><img src="${ICON[k]}" alt="">${k==='coin'?fmt(v):v+'× '+esc(ITEMS[k].name)}</span>`).join('')}</div>`;
-  const ask={label:'Ask about the area',fn:()=>{openDialog({who:'Pumpkin Pete',text:LORE[randi(0,LORE.length-1)],acts:[{label:'Back',fn:talkPete},{label:'Thanks, Pete',fn:closeModal}]});}};
-  if(!S.qActive){
-    openDialog({who:'Pumpkin Pete',title:q.title,text:q.text,extra:rewardsHTML(q.reward),acts:[{label:'Accept',primary:true,fn:()=>{S.qActive=true;sfx('quest');toast('New quest: '+q.title);updateTracker();closeModal();save();}},ask,{label:'Maybe later',fn:closeModal}]});
+  const lore=g==='wick'?WICK_LORE:LORE;
+  const ask={label:'Ask about the area',fn:()=>{openDialog({who:G.name,text:lore[randi(0,lore.length-1)],acts:[{label:'Back',fn:()=>talkTo(g)},{label:'Thanks, '+G.short,fn:closeModal}]});}};
+  if(!S.qact[g]){
+    openDialog({who:G.name,title:q.title,text:q.text,extra:rewardsHTML(q.reward),acts:[{label:'Accept',primary:true,fn:()=>{S.qact[g]=q.id;S.track=g;sfx('quest');toast('New quest: '+q.title);updateTracker();closeModal();save();}},ask,{label:'Maybe later',fn:closeModal}]});
   }else if(questReady(q)){
-    openDialog({who:'Pumpkin Pete',title:q.title,text:'Well, look at that! You actually did it. Here, take this, you earned it.',extra:rewardsHTML(q.reward),acts:[{label:'Hand in',primary:true,fn:()=>{
+    openDialog({who:G.name,title:q.title,text:g==='wick'?'Ha! I knew you had it in you. Here, this is for your trouble.':'Well, look at that! You actually did it. Here, take this, you earned it.',extra:rewardsHTML(q.reward),acts:[{label:'Hand in',primary:true,fn:()=>{
       if(q.need)pay(q.need);
       if(q.needFish){let left=q.needFish;for(const k of Object.keys(ITEMS).filter(k=>ITEMS[k].fish).sort((a,b)=>ITEMS[a].sell-ITEMS[b].sell)){while(left>0&&inv(k)>0){take(k,1);left--;}}}
       grantAll(q.reward,{x:player.x,y:2.4,z:player.z});
       sfx('quest');toast('Quest complete: '+q.title,'coin'); heroAct('victory',{speed:1.3});
-      S.qActive=false; if(S.qi<QUESTS.length)S.qi++; else {S.oddDone++;S.odd=null;}
+      if(q.id==='odd'){S.oddDone++;S.odds[g]=null;}else S.qdone[q.id]=true;
+      S.qact[g]=null; if(S.track===g){const o=Object.keys(GIVERS).find(x=>S.qact[x]);if(o)S.track=o;}
       updateTracker(); save(); closeModal();
-      setTimeout(()=>{if(mode==='play'&&!modalOpen&&Math.hypot(player.x-P.pete.x,player.z-P.pete.z)<4)talkPete();},450);
+      setTimeout(()=>{if(mode==='play'&&!modalOpen&&Math.hypot(player.x-P[g].x,player.z-P[g].z)<4)talkTo(g);},450);
     }},ask]});
   }else{
     const pg=questProgress(q).map(p=>`${esc(p.label)}: <b>${p.have}/${p.need}</b>`).join(' · ');
-    openDialog({who:'Pumpkin Pete',title:q.title,text:(q.hint||'')+'<br><span class="muted" style="font-size:13px">'+pg+'</span>',raw:true,acts:[ask,{label:'On my way',fn:closeModal}]});
+    openDialog({who:G.name,title:q.title,text:esc(q.hint||'')+'<br><span class="muted" style="font-size:13px">'+pg+'</span>',raw:true,acts:[ask,{label:'On my way',fn:closeModal}]});
   }
 }
+function talkPete(){talkTo('pete');}
 function updateTracker(){
   if(!S)return;
-  const q=currentQuest(), el=$('#tracker');
-  if(!q||!S.qActive){el.innerHTML=`<b>${S.qi<QUESTS.length?'Pumpkin Pete has a job':'Odd jobs available'}</b>Talk to Pete in the village plaza.`;}
-  else{const ready=questReady(q);el.innerHTML=`<b>${esc(q.title)}</b>`+questProgress(q).map(p=>`<div>${esc(p.label)} <span class="pg ${p.have>=p.need?'done':''}">${p.have}/${p.need}</span></div>`).join('')+(ready?'<div class="done"><b style="display:inline;font-family:inherit">Return to Pete</b></div>':'');}
-  if(peteMark){peteMark.visible=!S.qActive||questReady(q);peteMark.userData.set(S.qActive?'?':'!');}
+  const el=$('#tracker');
+  const act=Object.keys(GIVERS).filter(g=>S.qact[g]).sort((a,b)=>(a===S.track?-1:b===S.track?1:0));
+  if(!act.length){el.innerHTML=`<b>Quests available</b>Talk to Pumpkin Pete or Keeper Wick in the village plaza.<div class="navd" id="navDist"></div>`;}
+  else el.innerHTML=act.map((g,i)=>{const q=giverQuest(g),ready=questReady(q);
+    return `<div class="tq ${i?'sub':''}"><b>${esc(q.title)}</b>`+(i?'':questProgress(q).map(p=>`<div>${esc(p.label)} <span class="pg ${p.have>=p.need?'done':''}">${p.have}/${p.need}</span></div>`).join(''))+(ready?`<div class="done"><b style="display:inline;font-family:inherit">Return to ${GIVERS[g].short}</b></div>`:'')+(i?'':'<div class="navd" id="navDist"></div>')+`</div>`;}).join('')+(act.length>1?'<div class="tswap">Tap to switch quest</div>':'');
+  for(const g of Object.keys(GIVERS)){const m=MARKS[g];if(!m)continue;const q=giverQuest(g);const has=!S.qact[g];m.visible=has||(q&&questReady(q));m.userData.set(has?'!':'?');}
+  navT=0;
+}
+/* ---------- where to go next ---------- */
+let LH_DOOR={x:0,z:0}, navT=0, NAV=null;
+function nearestTree(){let best=null,bd=1e9;for(const t of TREES){if(t.state!=='up')continue;const d=Math.hypot(t.x-player.x,t.z-player.z);if(d<bd){bd=d;best=t;}}return best;}
+function questGoal(q){
+  const need=q.need||{}, has=k=>inv(k)>=(need[k]||0);
+  if(q.flag==='lighthouse')return {x:LH_DOOR.x,z:LH_DOOR.z,label:'Old Lighthouse'};
+  if(q.flag==='house2'){
+    const req=HOUSE_UP[2]||{}, short=k=>inv(k)<(req[k]||0);
+    if(short('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,label:"Buy a kit at Hazel's"};
+    if(short('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,label:'Chop trees for wood'};}
+    if(short('stone'))return {x:P.cave.x,z:P.cave.z,label:'Glimmer Cave'};
+    return {x:houseDoor.x,z:houseDoor.z+.5,label:'Your house'};
+  }
+  if(q.needFish||Object.keys(need).some(k=>ITEMS[k].fish&&!has(k)))return {x:SPOTS[0].x,z:SPOTS[0].z,label:'The dock'};
+  if(need.bone&&!has('bone'))return {x:P.graveyard.x,z:P.graveyard.z,label:'Whispering Graveyard'};
+  if(need.pumpkin&&!has('pumpkin'))return {x:P.patch.x,z:P.patch.z,label:'Pumpkin Patch'};
+  if((need.amethyst&&!has('amethyst'))||(need.stone&&!has('stone')))return {x:P.cave.x,z:P.cave.z,label:'Glimmer Cave'};
+  if(need.wood&&!has('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,label:'Chop trees for wood'};}
+  return null;
+}
+function navTarget(){
+  if(!S||S.inside)return null;
+  const order=[S.track,...Object.keys(GIVERS).filter(g=>g!==S.track)];
+  for(const g of order){
+    if(!S.qact[g])continue; const q=giverQuest(g); if(!q)continue;
+    if(questReady(q))return {x:P[g].x,z:P[g].z,label:'Return to '+GIVERS[g].short};
+    const t=questGoal(q); if(t)return t;
+  }
+  let best=null,bd=1e9;
+  for(const g of Object.keys(GIVERS)){if(S.qact[g])continue;const d=Math.hypot(P[g].x-player.x,P[g].z-player.z);if(d<bd){bd=d;best={x:P[g].x,z:P[g].z,label:'Talk to '+GIVERS[g].short}};}
+  return best;
+}
+let navBeam=null, navArrow=null;
+function makeNavObjects(){
+  navBeam=new THREE.Group();
+  const bm=new THREE.Mesh(new THREE.CylinderGeometry(.35,.9,26,16,1,true),new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.16,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+  bm.position.y=13; navBeam.add(bm);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.1,1.45,40),new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=.06; navBeam.add(ring); navBeam.userData.ring=ring;
+  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),new THREE.MeshBasicMaterial({color:'#ffe9a8',fog:false})); gem.position.y=3.4; gem.scale.y=1.5; navBeam.add(gem); navBeam.userData.gem=gem;
+  glow('#ffc96a',2.4,navBeam,0,3.4,0,.7);
+  navBeam.visible=false; scene.add(navBeam);
+  const sh=new THREE.Shape(); sh.moveTo(0,.55); sh.lineTo(.42,0); sh.lineTo(.17,0); sh.lineTo(.17,-.35); sh.lineTo(-.17,-.35); sh.lineTo(-.17,0); sh.lineTo(-.42,0); sh.lineTo(0,.55);
+  const ag=new THREE.ShapeGeometry(sh); ag.rotateX(-Math.PI/2); // point along -z, flat on the ground
+  navArrow=new THREE.Mesh(ag,new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.85,depthWrite:false,fog:false}));
+  navArrow.scale.setScalar(1.7); navArrow.renderOrder=3; glow('#ffc96a',1.6,navArrow,0,.05,-.1,.55); navArrow.visible=false; scene.add(navArrow);
+}
+function updateNav(dt){
+  if(!navBeam)return;
+  navT-=dt; if(navT<=0){navT=.25;NAV=navTarget();const d=$('#navDist');if(d)d.textContent=NAV?`➜ ${NAV.label} · ${Math.round(Math.hypot(NAV.x-player.x,NAV.z-player.z))} m`:'';}
+  const show=NAV&&mode==='play'&&!S.inside&&!player.dead;
+  const dist=show?Math.hypot(NAV.x-player.x,NAV.z-player.z):0;
+  navBeam.visible=!!show&&dist>3;
+  if(navBeam.visible){navBeam.position.set(NAV.x,groundH(NAV.x,NAV.z),NAV.z);navBeam.userData.gem.position.y=3.4+Math.sin(clock*2.5)*.25;navBeam.userData.gem.rotation.y=clock*1.5;const s=1+.12*Math.sin(clock*3);navBeam.userData.ring.scale.set(s,s,s);}
+  navArrow.visible=!!show&&dist>5&&!fish&&!placing;
+  if(navArrow.visible){const a=Math.atan2(NAV.x-player.x,NAV.z-player.z);navArrow.position.set(player.x+Math.sin(a)*2.3,player.y+.1,player.z+Math.cos(a)*2.3);navArrow.rotation.set(0,a+Math.PI,0);navArrow.material.opacity=.55+.3*Math.sin(clock*4);}
 }
 
 /* =================================================================
@@ -2100,15 +2195,18 @@ function openBag(sel){
 // ---- quest log
 function openQuests(){
   sfx('ui');
-  const q=currentQuest();
   let body='';
-  if(q&&S.qActive){body+=`<div class="q"><b>${esc(q.title)}</b> <span class="muted" style="font-size:12px">ACTIVE</span><p>${esc(q.text)}</p><p>${questProgress(q).map(p=>`${esc(p.label)}: <b style="color:${p.have>=p.need?'var(--good)':'var(--text)'}">${p.have}/${p.need}</b>`).join(' · ')}</p><p>${esc(q.hint||'')}</p></div>`;}
-  else body+=`<div class="q"><b>No active quest</b><p>Pumpkin Pete is waiting in the village plaza with something for you to do.</p></div>`;
-  const done=QUESTS.slice(0,S.qi);
-  if(done.length)body+=`<h3 style="margin:6px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;color:var(--muted)">COMPLETED</h3><div class="ql">${done.map(d=>`<div class="q done"><b>${esc(d.title)}</b></div>`).join('')}${S.oddDone?`<div class="q done"><b>Odd jobs finished: ${S.oddDone}</b></div>`:''}</div>`;
+  for(const g of Object.keys(GIVERS)){
+    const q=giverQuest(g), G=GIVERS[g];
+    if(S.qact[g]&&q){body+=`<div class="q"><b>${esc(q.title)}</b> <span class="muted" style="font-size:12px">${esc(G.name.toUpperCase())}${g===S.track?' · TRACKED':''}</span><p>${esc(q.text)}</p><p>${questProgress(q).map(p=>`${esc(p.label)}: <b style="color:${p.have>=p.need?'var(--good)':'var(--text)'}">${p.have}/${p.need}</b>`).join(' · ')}</p><p>${esc(q.hint||'')}</p>${g!==S.track?`<button class="btn" data-track="${g}">Track this quest</button>`:''}</div>`;}
+    else body+=`<div class="q"><b>${esc(G.name)} has ${q?'a new quest':'odd jobs'}</b><p>Find ${esc(G.short)} in the village plaza. The golden light shows the way.</p></div>`;
+  }
+  const done=QUESTS.filter(q=>S.qdone[q.id]);
+  if(done.length||S.oddDone)body+=`<h3 style="margin:6px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;color:var(--muted)">COMPLETED</h3><div class="ql">${done.map(d=>`<div class="q done"><b>${esc(d.title)}</b> <span class="muted" style="font-size:12px">${esc(GIVERS[d.giver].short)}</span></div>`).join('')}${S.oddDone?`<div class="q done"><b>Odd jobs finished: ${S.oddDone}</b></div>`:''}</div>`;
   const disc=REGIONS.filter(r=>S.disc[r.id]).length;
   body+=`<p class="hint">Places discovered: ${disc} of ${REGIONS.length} · Chests found: ${Object.keys(S.chests).length} of ${CHESTS.length}</p>`;
   openModal(win('Quests',`<div class="ql">${body}</div>`),'quests');
+  modal.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{S.track=b.dataset.track;updateTracker();openQuests();});
 }
 // ---- travel
 function openTravel(){
@@ -2229,10 +2327,18 @@ function drawMini(dt){
   dot(P.house.x,P.house.z,5,'#ffb04a','#3a1505');
   dot(P.merchant.x,P.merchant.z,4,'#a77bff','#1a0a2a');
   dot(P.pete.x,P.pete.z,4.5,peteMark&&peteMark.visible?'#ffd27a':'#c98a55','#3a1505');
+  dot(P.wick.x,P.wick.z,4.5,MARKS.wick&&MARKS.wick.visible?'#ffd27a':'#8aa0c8','#141a30');
   for(const sk of SKELS)if(sk.alive)dot(sk.x,sk.z,2.6,'#ff5a4a');
   for(const ch of CHESTS)if(!S.chests[ch.id]&&Math.hypot(ch.x-player.x,ch.z-player.z)<22)dot(ch.x,ch.z,3,'#ffe08a');
   for(const r of REGIONS)if(!S.disc[r.id]){g.fillStyle='#ffffff55';g.font='bold 9px sans-serif';g.textAlign='center';g.fillText('?',cx+r.x*s,cy+r.z*s+3);}
   g.setTransform(1,0,0,1,0,0);
+  if(NAV){ // goal: a pulsing diamond, or an arrow on the rim when it is off the map
+    let mx=(cx+NAV.x*s)*z+ox, my=(cy+NAV.z*s)*z+oy; const dx=mx-150, dy=my-150, dd=Math.hypot(dx,dy), pul=1+.18*Math.sin(clock*5);
+    g.save();
+    if(dd>128){const a=Math.atan2(dy,dx);g.translate(150+Math.cos(a)*128,150+Math.sin(a)*128);g.rotate(a);g.beginPath();g.moveTo(14*pul,0);g.lineTo(-6,-10);g.lineTo(-2,0);g.lineTo(-6,10);g.closePath();}
+    else{g.translate(mx,my);g.rotate(Math.PI/4);g.beginPath();g.rect(-8*pul,-8*pul,16*pul,16*pul);}
+    g.fillStyle='#ffd27a';g.fill();g.strokeStyle='#3a1505';g.lineWidth=3;g.stroke();g.restore();
+  }
   g.translate(150,150); g.rotate(-player.rot+Math.PI); g.beginPath(); g.moveTo(0,-11); g.lineTo(7,8); g.lineTo(0,4); g.lineTo(-7,8); g.closePath(); g.fillStyle='#fff'; g.fill(); g.strokeStyle='#000'; g.lineWidth=2; g.stroke();
   g.restore();
 }
@@ -2286,6 +2392,7 @@ function press(el,fn,repeat){
   el.addEventListener('click',()=>{if(performance.now()-lastTouch>600)fn();});
 }
 press($('#sSlash'),doSlash,true); press($('#sFire'),doFire,true); press($('#sBolt'),doBolt,true); press($('#sAct'),interact,false);
+$('#tracker').addEventListener('click',()=>{if(!S)return;const act=Object.keys(GIVERS).filter(g=>S.qact[g]);if(act.length>1){S.track=act.find(g=>g!==S.track);updateTracker();sfx('ui');}});
 $('#mBag').onclick=()=>openBag(); $('#mQuest').onclick=openQuests; $('#mBuild').onclick=()=>openBuild(); $('#mPause').onclick=()=>openPause();
 $('#pRot').onclick=()=>{if(placing)placing.rot+=Math.PI/4;}; $('#pOk').onclick=confirmPlace; $('#pCancel').onclick=stopPlacing;
 ['#sSlash','#sFire','#sBolt','#sAct','#mBag','#mQuest','#mBuild','#mPause','#pRot','#pOk','#pCancel'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter')e.stopPropagation();}));
@@ -2296,7 +2403,7 @@ function findNearest(){
   if(placing||fish)return;
   for(const it of INTER){const d=Math.hypot(it.x-player.x,it.z-player.z);if(d<it.r&&d<best){const l=it.label();if(l){best=d;nearest={it,l};}}}
   for(const sp of SPOTS){const d=Math.hypot(sp.x-player.x,sp.z-player.z);if(d<2.2&&d<best){best=d;nearest={it:{x:sp.x,z:sp.z,act:()=>startFishing(sp)},l:'Fish at '+sp.name+(inv('bait')?` (bait ×${inv('bait')})`:'')};}}
-  if(Math.hypot(P.pete.x-player.x,P.pete.z-player.z)<2.8){nearest={it:{x:P.pete.x,z:P.pete.z,act:talkPete},l:'Talk to Pumpkin Pete'};}
+  for(const g of Object.keys(GIVERS)){if(Math.hypot(P[g].x-player.x,P[g].z-player.z)<2.8){nearest={it:{x:P[g].x,z:P[g].z,act:()=>talkTo(g)},l:'Talk to '+GIVERS[g].name};}}
 }
 function interact(){
   if(mode!=='play'||modalOpen||player.dead)return;
@@ -2420,7 +2527,7 @@ $('#previewDrag').addEventListener('pointermove',e=>{if(drag!==null){cRot+=(e.cl
 $('#previewDrag').addEventListener('pointerup',()=>{drag=null;});
 
 function toTitle(){
-  mode='title'; stopPlacing(); cancelFishing(); setInsideLights(false);
+  mode='title'; stopPlacing(); cancelFishing(); setInsideLights(false); if(navBeam){navBeam.visible=false;navArrow.visible=false;}
   $('#hud').hidden=true; $('#create').hidden=true; $('#title').hidden=false;
   const sv=loadSave(); $('#bCont').disabled=!sv; $('#contInfo').textContent=sv?`${sv.name} · ${fmt(sv.coins)} coins · ${HOUSE_NAMES[sv.house]}`:'No saved game yet';
 }
@@ -2438,13 +2545,13 @@ function applyState(){
   CHESTS.forEach(ch=>{const o=!!S.chests[ch.id];ch.g.userData.lid.rotation.x=o?-1.6:0;ch.sp.material.opacity=o?0:.6;});
   if(S.pick==='basic')TOOLS.pick.children[1].material=M('#8fd0ff',{metalness:.7,roughness:.3,emissive:'#1a3a5a'});
   player.x=S.pos.x; player.z=S.pos.z; player.dead=false; player.y=heightAt(player.x,player.z);
-  refreshHUD(); updateTracker();
+  migrateQuests(); refreshHUD(); updateTracker();
 }
 function startGame(fresh){
   applyState();
   $('#title').hidden=true; $('#create').hidden=true; $('#hud').hidden=false;
   mode='play'; snapCamera();
-  if(fresh){save();setTimeout(()=>{banner('Hallows Island');},300);setTimeout(()=>toast('Pumpkin Pete is waiting in the plaza. Follow the lantern path east.'),1400);}
+  if(fresh){save();setTimeout(()=>{banner('Hallows Island');},300);setTimeout(()=>toast('Pumpkin Pete and Keeper Wick have work for you. Follow the golden light.'),1400);}
   else toast('Welcome back, '+S.name);
 }
 $('#bNew').onclick=()=>{sfx('ui');const sv=loadSave();openCreate(false);if(sv)toast('Starting a new game will replace your saved island when you begin.');};
@@ -2468,7 +2575,8 @@ function loop(now){
   for(const f of FLICK)f.l.intensity=f.base*(1+f.f*(Math.sin(clock*9+f.ph)*.5+Math.sin(clock*23+f.ph*2)*.3));
   for(const a of ANIM)a(clock);
   updateParticles(dt); updateSmoke(dt);
-  if(peteMark){peteMark.position.y=3.6+Math.sin(clock*3)*.15;}
+  for(const k in MARKS)MARKS[k].position.y=3.6+Math.sin(clock*3+(k==='wick'?1.5:0))*.15;
+  if(wickObj){wickObj.userData.P.body.position.y=Math.sin(clock*1.4+2)*.025;wickObj.userData.P.head.rotation.y=Math.sin(clock*.5)*.3;}
   if(peteObj){peteObj.userData.P.body.position.y=Math.sin(clock*1.6)*.03;peteObj.userData.P.head.rotation.z=Math.sin(clock*.8)*.12;peteObj.userData.P.armR.rotation.z=Math.sin(clock*1.3)*.15;}
   if(hazelObj){hazelObj.userData.P.body.position.y=Math.sin(clock*1.8+1)*.03;hazelObj.userData.P.head.rotation.y=Math.sin(clock*.6)*.4;hazelObj.userData.P.armL.rotation.x=-.4+Math.sin(clock*2)*.2;}
   if(mode==='title'||mode==='titlehow'){titleA+=dt*.05;const r=52;camera.position.set(Math.cos(titleA)*r,28,Math.sin(titleA)*r);camera.lookAt(0,0,0);moon.position.set(-22,48,-30);moon.target.position.set(0,0,0);}
@@ -2477,7 +2585,7 @@ function loop(now){
   else if(mode==='play'){
     if(!modalOpen&&!portrait){updatePlayer(dt);updateSkels(dt);updateCombatFx(dt);updateFishing(dt);updatePlacing();}
     else{updateCombatFx(dt);}
-    updatePlots(dt); updateNodes(dt); updateTrees(dt);
+    updatePlots(dt); updateNodes(dt); updateTrees(dt); updateNav(dt);
     if(player.model&&player.model.userData.anim)player.model.userData.anim(dt,{move:(modalOpen||portrait||player.dead)?0:player.moving,run:player.running&&player.moving>.5});
     findNearest(); updatePrompt(); updateCamera(dt); drawMini(dt); updateRegions(dt); updateCooldowns();
     if(hpDirty){hpDirty=false;$('#hpBar').style.width=(S.hp/S.maxHp*100)+'%';$('#hpTxt').textContent=`${Math.ceil(S.hp)} / ${S.maxHp}`;}
@@ -2541,7 +2649,7 @@ checkOrient();
 ================================================================= */
 function boot(){
   try{renderIcons();}catch(e){}
-  buildWorld(); makeTools(); makeFishingGear(); slashFx=makeSlashFx(); buildCreateScene(); buildMiniBg(); resize();
+  buildWorld(); makeNavObjects(); makeTools(); makeFishingGear(); slashFx=makeSlashFx(); buildCreateScene(); buildMiniBg(); resize();
   S=null; toTitle(); loadHero(); loadTrees();
   // a stand-in player for title (hidden)
   requestAnimationFrame(loop);
