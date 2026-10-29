@@ -695,7 +695,8 @@ const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boo
 const ARM_DOWN=1.22;
 function loadHero(){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||!window.fetch)return;
-  fetch('models/hero.glb').then(r=>{if(!r.ok)throw new Error('missing');return r.arrayBuffer();})
+  const b64=()=>fetch('models/hero.b64.txt').then(r=>{if(!r.ok)throw new Error('missing');return r.text();}).then(t=>{const s=atob(t.trim()),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;});
+  fetch('models/hero.glb').then(r=>{if(!r.ok)throw new Error('missing');return r.arrayBuffer();}).catch(b64)
   .then(buf=>new Promise((res,rej)=>new THREE.GLTFLoader().parse(buf,'',res,rej)))
   .then(gl=>{
     HERO={scene:gl.scene};
