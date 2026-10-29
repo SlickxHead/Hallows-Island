@@ -1407,13 +1407,16 @@ function buildFlora(){
   for(let i=0;i<120;i++){const a=sr(0,TAU),d=Math.sqrt(srand())*(R(a)-2);const x=Math.cos(a)*d,z=Math.sin(a)*d;if(ZONES.some(zn=>Math.hypot(x-zn.x,z-zn.z)<zn.r*.8)||distToPath(x,z)<2)continue;(srand()<.4?rocks:bush).push({x,z,s:sr(.4,1),r:sr(0,TAU)});}
   const o=new THREE.Object3D(), col=new THREE.Color();
   const inst=(geo,mat,list,fn)=>{const im=new THREE.InstancedMesh(geo,mat,list.length);list.forEach((t,i)=>{fn(o,t,i);o.updateMatrix();im.setMatrixAt(i,o.matrix);});im.castShadow=true;im.receiveShadow=true;scene.add(im);return im;};
-  inst(Cyl(.16,.24,1.4,6),M('#3b2a1e'),pine,(o,t)=>{o.position.set(t.x,.5+.7*t.s,t.z);o.rotation.set(0,t.r,0);o.scale.setScalar(t.s);});
-  [[1.5,1.9,1.5],[1.15,1.6,2.4],[.78,1.3,3.2]].forEach(([r,h,y],k)=>inst(Cone(r,h,7),M(['#1d3a33','#22433a','#284a3e'][k],{flatShading:true}),pine,(o,t)=>{o.position.set(t.x,.5+y*t.s,t.z);o.rotation.set(0,t.r+k,0);o.scale.setScalar(t.s);}));
-  inst(Cyl(.14,.22,1.8,6),M('#3b2a1e'),aut,(o,t)=>{o.position.set(t.x,.5+.9*t.s,t.z);o.scale.setScalar(t.s);});
+  const pineM=[], autM=[];
+  pineM.push(inst(Cyl(.16,.24,1.4,6),M('#3b2a1e'),pine,(o,t)=>{o.position.set(t.x,.5+.7*t.s,t.z);o.rotation.set(0,t.r,0);o.scale.setScalar(t.s);}));
+  [[1.5,1.9,1.5],[1.15,1.6,2.4],[.78,1.3,3.2]].forEach(([r,h,y],k)=>pineM.push(inst(Cone(r,h,7),M(['#1d3a33','#22433a','#284a3e'][k],{flatShading:true}),pine,(o,t)=>{o.position.set(t.x,.5+y*t.s,t.z);o.rotation.set(0,t.r+k,0);o.scale.setScalar(t.s);})));
+  autM.push(inst(Cyl(.14,.22,1.8,6),M('#3b2a1e'),aut,(o,t)=>{o.position.set(t.x,.5+.9*t.s,t.z);o.scale.setScalar(t.s);}));
   const fol=inst(new THREE.IcosahedronGeometry(1.35,0),new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.9,flatShading:true}),aut,(o,t)=>{o.position.set(t.x,.5+2.5*t.s,t.z);o.rotation.set(t.r,t.r*2,0);o.scale.set(t.s,t.s*.9,t.s);});
   aut.forEach((t,i)=>{col.set(['#c9682a','#d98a2b','#a8432a','#e0a83a','#8a3a2a'][i%5]);fol.setColorAt(i,col);});
   const fol2=inst(new THREE.IcosahedronGeometry(.9,0),new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.9,flatShading:true}),aut,(o,t)=>{o.position.set(t.x+.7*t.s,.5+3.2*t.s,t.z-.3*t.s);o.rotation.set(t.r,t.r,0);o.scale.setScalar(t.s);});
   aut.forEach((t,i)=>{col.set(['#d98a2b','#c9682a','#e0a83a','#a8432a','#b8532a'][i%5]);fol2.setColorAt(i,col);});
+  autM.push(fol,fol2);
+  FLORA.pine={list:pine,meshes:pineM}; FLORA.aut={list:aut,meshes:autM};
   inst(new THREE.DodecahedronGeometry(.8,0),M('#5b5966',{flatShading:true}),rocks,(o,t)=>{o.position.set(t.x,.5+.2*t.s,t.z);o.rotation.set(t.r,t.r,t.r);o.scale.set(t.s,t.s*.6,t.s);});
   const bm=inst(new THREE.IcosahedronGeometry(.6,0),new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.9,flatShading:true}),bush,(o,t)=>{o.position.set(t.x,.6,t.z);o.rotation.set(0,t.r,0);o.scale.set(t.s,t.s*.75,t.s);});
   bush.forEach((t,i)=>{col.set(['#2f4f2a','#3d5a2a','#8a4a22','#6a3a5a'][i%4]);bm.setColorAt(i,col);});
@@ -1429,6 +1432,36 @@ function buildFireflies(){
   flies=new THREE.Points(g,new THREE.PointsMaterial({color:'#ffe27a',size:.35,map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
   scene.add(flies);
   ANIM.push(t=>{for(let i=0;i<n;i++){const b=base[i];pos[i*3]=b[0]+Math.sin(t*.5+b[3])*1.2;pos[i*3+1]=b[1]+Math.sin(t*1.3+b[3]*2)*.4;pos[i*3+2]=b[2]+Math.cos(t*.4+b[3])*1.2;}g.attributes.position.needsUpdate=true;flies.material.opacity=.7+.3*Math.sin(t*2);});
+}
+
+
+/* ---------- Tripo tree models (replace the code-built trees once loaded) ---------- */
+const FLORA={};
+function loadGLB(name){
+  const b64=()=>fetch('models/'+name+'.b64.txt').then(r=>{if(!r.ok)throw new Error('missing');return r.text();}).then(t=>{const s=atob(t.trim()),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;});
+  return fetch('models/'+name+'.glb').then(r=>{if(!r.ok)throw new Error('missing');return r.arrayBuffer();}).catch(b64)
+    .then(buf=>new Promise((res,rej)=>new THREE.GLTFLoader().parse(buf,'',res,rej)));
+}
+const TREE_DEF={
+  pine:{file:'tree_pine',height:4.1,tints:['#6f8f88','#7b9a92','#86a39b','#6a8780']},
+  aut:{file:'tree_autumn',height:4.3,tints:['#ff9450','#ffb35c','#f0784a','#ffc66e','#d9653e']},
+};
+function loadTrees(){
+  if(!THREE.GLTFLoader||!window.fetch)return;
+  for(const k of Object.keys(TREE_DEF)){
+    const def=TREE_DEF[k], F=FLORA[k]; if(!F||!F.list.length)continue;
+    loadGLB(def.file).then(gl=>{
+      let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{if(o.isMesh&&!src)src=o;}); if(!src)return;
+      const geo=src.geometry.clone(); geo.applyMatrix4(src.matrixWorld); geo.computeBoundingBox();
+      const bb=geo.boundingBox, sc=def.height/(bb.max.y-bb.min.y);
+      geo.translate(-(bb.min.x+bb.max.x)/2,-bb.min.y,-(bb.min.z+bb.max.z)/2); geo.scale(sc,sc,sc); geo.computeBoundingSphere();
+      const mat=src.material; mat.metalness=0; mat.roughness=.92; if(mat.map){mat.map.encoding=THREE.LinearEncoding;mat.map.anisotropy=4;mat.map.needsUpdate=true;} mat.needsUpdate=true;
+      const im=new THREE.InstancedMesh(geo,mat,F.list.length), o=new THREE.Object3D(), c=new THREE.Color();
+      F.list.forEach((t,i)=>{o.position.set(t.x,.48,t.z);o.rotation.set(0,t.r,0);o.scale.setScalar(t.s);o.updateMatrix();im.setMatrixAt(i,o.matrix);c.set(def.tints[i%def.tints.length]);im.setColorAt(i,c);});
+      im.castShadow=true; im.receiveShadow=true; scene.add(im);
+      F.meshes.forEach(m=>scene.remove(m)); F.meshes=[im];
+    }).catch(()=>{});
+  }
 }
 
 /* =================================================================
@@ -2439,7 +2472,7 @@ checkOrient();
 function boot(){
   try{renderIcons();}catch(e){}
   buildWorld(); makeTools(); makeFishingGear(); slashFx=makeSlashFx(); buildCreateScene(); buildMiniBg(); resize();
-  S=null; toTitle(); loadHero();
+  S=null; toTitle(); loadHero(); loadTrees();
   // a stand-in player for title (hidden)
   requestAnimationFrame(loop);
 }
