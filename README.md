@@ -6,7 +6,7 @@ Create your character, then explore a moonlit island: take quests from Pumpkin P
 
 ## Play
 
-**https://slickxhead.github.io/hallows-island/**
+**https://slickxhead.github.io/Hallows-Island/**
 
 ## Install on your phone
 
