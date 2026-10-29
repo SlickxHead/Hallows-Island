@@ -538,7 +538,7 @@ const IN_TABS=['House','Furniture','Decor','Lighting'];
 const LOOK_OPTS={
   skin:['#f5d0b0','#e3a982','#c28456','#8a5634','#5c3822','#cfe2cf'],
   hair:['#2a1c14','#5b3a22','#a8662e','#e6cd8a','#d9d9e3','#b8432d','#6a3f9e'],
-  model:['Detailed','Classic'],
+  model:['Detailed','Girl','Classic'],
   style:['Short','Long','Spiky'],
   outfit:['#4a3527','#2e3d5a','#5a2e48','#33553a','#8a4520','#3a3a44'],
   hat:['None','Witch Hat','Beanie','Pumpkin'],
@@ -760,17 +760,33 @@ let HERO=null;                       // {scene, clips, upper} once models/hero.g
 const HERO_SCALE=2.05;
 // what each generated part is, by Tripo part number
 const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boot',7:'outfit',8:'skin',9:'outfit',10:'skin',11:'outfit',12:'hair',13:'hair'};
-const LOWER_BONES=/^(Root|Hip|Pelvis|[LR]_(Thigh|Calf|Foot|Toe))/;
+const LOWER_BONES=/^(Root|BoneRoot|Hip|Pelvis|[LR]_(Thigh|Calf|Foot|Toe|Knee))/;
+let HEROINE=null;                    // the girl, from models/heroine.glb (her own idle/walk/run, actions retargeted from the boy)
+const MODEL_LABEL={Detailed:'Boy',Girl:'Girl',Classic:'Classic'};
+// what each part of the girl is, by Tripo part number; her colors come from the model and are tinted
+const GIRL_ROLE={0:'hair',1:'pack',2:'outfit',3:'face',4:'boot',5:'boot',6:'pants',7:'hair',8:'outfit',9:'outfit',10:'hair',11:'skin',12:'skin'};
 function loadHero(){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||!window.fetch)return;
-  loadGLB('hero').then(gl=>{
+  const prep=gl=>{
     const clips={}, upper={};
     for(const c of gl.animations){clips[c.name]=c;const u=c.clone();u.name=c.name+'_upper';u.tracks=u.tracks.filter(t=>!LOWER_BONES.test(t.name));upper[c.name]=u;}
     if(!clips.idle||!clips.walk)throw new Error('no animations');
-    HERO={scene:gl.scene,clips,upper};
-    if(S&&player.model&&S.look.model!=='Classic'){const t=player.tool;rebuildPlayer();if(t)setTool(t);}
+    return {scene:gl.scene,clips,upper};
+  };
+  const ready=girl=>{
+    if(S&&player.model&&(S.look.model==='Girl')===girl&&S.look.model!=='Classic'){const t=player.tool;rebuildPlayer();if(t)setTool(t);}
     if(mode==='create'){renderCreateOpts();rebuildPreview();}
-  }).catch(()=>{HERO=null;});
+  };
+  loadGLB('hero').then(gl=>{HERO=prep(gl);ready(false);}).catch(()=>{HERO=null;});
+  loadGLB('heroine').then(gl=>{HEROINE=prep(gl);
+    // per part: the model's own color, as brightness (for hair and outfit) and as the average of its lighter half (for skin)
+    HEROINE.scene.traverse(o=>{if(!o.isMesh||!o.geometry.attributes.color)return;
+      const c=o.geometry.attributes.color, a=c.array, k=a instanceof Uint8Array?1/255:1, n=c.count, lum=new Float32Array(n), m=[0,0,0];
+      for(let i=0;i<n;i++){const r=a[i*c.itemSize]*k,g=a[i*c.itemSize+1]*k,b=a[i*c.itemSize+2]*k;lum[i]=.3*r+.59*g+.11*b;m[0]+=r;m[1]+=g;m[2]+=b;}
+      let ml=0;for(let i=0;i<n;i++)ml+=lum[i];ml/=n;for(let i=0;i<n;i++)lum[i]/=ml;
+      const hi=[0,0,0];let nh=0;for(let i=0;i<n;i++)if(lum[i]>=1){hi[0]+=a[i*c.itemSize]*k;hi[1]+=a[i*c.itemSize+1]*k;hi[2]+=a[i*c.itemSize+2]*k;nh++;}
+      o.geometry.userData.lum=lum;o.geometry.userData.mean=nh?hi.map(v=>v/nh):m.map(v=>v/n);});
+    ready(true);}).catch(()=>{HEROINE=null;});
 }
 const FACE_UV={z0:-.24,w:.48,y0:.46,h:.42};
 function faceTexture(L){
@@ -791,17 +807,40 @@ function faceTexture(L){
   g.strokeStyle='#6b2a20'; g.lineWidth=S(.0045); g.lineCap='round'; g.beginPath(); g.arc(X(-.046),Y(.661),S(.019),Math.PI*.22,Math.PI*.78); g.stroke();
   const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
 }
-function makeCharacter(L){return (L.model!=='Classic'&&HERO)?buildHero(L):buildCharacter(L);}
+function makeCharacter(L){if(L.model==='Girl')return HEROINE?buildHero(L,true):HERO?buildHero(L):buildCharacter(L);return (L.model!=='Classic'&&HERO)?buildHero(L):buildCharacter(L);}
 function heroAct(name,o){const u=player.model&&player.model.userData;if(u&&u.act)u.act(name,o||{});}
 function heroStop(){const u=player.model&&player.model.userData;if(u&&u.stopAct)u.stopAct();}
-function buildHero(L){
+const HERO_KIND={
+  boy:{rot:-Math.PI/2,walk:2.0,run:1.9,squash:.70,hat:[.02,.71,0,.84,Math.PI/2]},
+  // the girl faces +z in her own space; her walk clip is a slow stroll, so it plays faster
+  girl:{rot:0,walk:2.9,run:2.1,squash:.70,hat:[0,.71,.04,.84,0]},
+};
+function tintGirl(o,role,L){
+  const want=new THREE.Color({hair:L.hair,outfit:L.outfit,skin:L.skin,face:L.skin}[role]);
+  const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:role==='hair'?.6:.85,skinning:true});
+  if(role==='hair'||role==='outfit'){ // shading kept, color swapped
+    const lum=o.geometry.userData.lum, col=new Float32Array(lum.length*3);
+    for(let i=0;i<lum.length;i++){const l=Math.min(1.6,lum[i]);col[i*3]=Math.min(1,want.r*l);col[i*3+1]=Math.min(1,want.g*l);col[i*3+2]=Math.min(1,want.b*l);}
+    o.geometry=o.geometry.clone(); o.geometry.setAttribute('color',new THREE.BufferAttribute(col,3));
+  }else if(role==='skin'||role==='face'){ // shift the whole part toward the new skin, so eyes and blush keep their shapes
+    const m=o.geometry.userData.mean; mat.color.setRGB(Math.min(1.8,want.r/Math.max(.05,m[0])),Math.min(1.8,want.g/Math.max(.05,m[1])),Math.min(1.8,want.b/Math.max(.05,m[2])));
+  }
+  return mat;
+}
+function buildHero(L,girl){
+  const K=girl?HERO_KIND.girl:HERO_KIND.boy, D=girl?HEROINE:HERO;
   const g=new THREE.Group(), fix=new THREE.Group();
-  fix.rotation.y=-Math.PI/2; fix.scale.setScalar(HERO_SCALE); g.add(fix);
-  const src=THREE.SkeletonUtils.clone(HERO.scene); fix.add(src);
+  fix.rotation.y=K.rot; fix.scale.setScalar(HERO_SCALE); g.add(fix);
+  const src=THREE.SkeletonUtils.clone(D.scene); fix.add(src);
   const bones={}, hatted=L.hat==='Witch Hat'||L.hat==='Beanie';
   src.traverse(o=>{
     if(o.isBone)bones[o.name]=o;
-    if(o.isMesh){
+    if(o.isMesh&&girl){
+      const role=GIRL_ROLE[+o.name.replace(/\D+/g,'')]||'pack';
+      if(o.geometry.userData.lum)o.material=tintGirl(o,role,L); else o.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,skinning:true});
+      if(role==='hair'&&hatted){o.geometry=o.geometry.clone();const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>K.squash)p.setY(i,K.squash+(y-K.squash)*.45);}p.needsUpdate=true;o.geometry.computeBoundingSphere();}
+      o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
+    }else if(o.isMesh){
       const role=HERO_ROLE[+o.name.replace(/\D+/g,'')]||'outfit';
       const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:'#2b2622',boot:'#4a3122'}[role];
       o.material=new THREE.MeshStandardMaterial({color:col,roughness:role==='hair'?.6:.85,skinning:true});
@@ -821,15 +860,15 @@ function buildHero(L){
   });
   // locomotion loops blend by speed; one action at a time plays over them
   const mixer=new THREE.AnimationMixer(src);
-  const loopA=n=>{const a=mixer.clipAction(HERO.clips[n]);a.play();a.setEffectiveWeight(0);return a;};
+  const loopA=n=>{const a=mixer.clipAction(D.clips[n]);a.play();a.setEffectiveWeight(0);return a;};
   const base={idle:loopA('idle'),walk:loopA('walk'),run:loopA('run')}; base.idle.setEffectiveWeight(1);
-  base.walk.timeScale=2.0; base.run.timeScale=1.9;
+  base.walk.timeScale=K.walk; base.run.timeScale=K.run;
   let one=null, runW=0;
-  // Tripo's animations keep the model's palms-forward hands; turn the forearms so the palms face the legs
-  const armFix=[['L_Forearm',1.4],['R_Forearm',-1.4]].map(([n,a])=>{const b=bones[n];if(!b)return null;const c=b.children.find(o=>o.isBone);const ax=c?c.position.clone().normalize():new THREE.Vector3(0,1,0);return {b,rest:b.quaternion.clone(),q:new THREE.Quaternion().setFromAxisAngle(ax,a)};}).filter(Boolean);
+  // the boy's Tripo animations keep his palms-forward hands; turn his forearms so the palms face the legs (the girl's already do)
+  const armFix=(girl?[]:[['L_Forearm',1.4],['R_Forearm',-1.4]]).map(([n,a])=>{const b=bones[n];if(!b)return null;const c=b.children.find(o=>o.isBone);const ax=c?c.position.clone().normalize():new THREE.Vector3(0,1,0);return {b,rest:b.quaternion.clone(),q:new THREE.Quaternion().setFromAxisAngle(ax,a)};}).filter(Boolean);
   const OVER=12; // action weight: overrides the loops on the bones it animates
   const act=(name,o)=>{
-    const clip=(o.upper?HERO.upper:HERO.clips)[name]; if(!clip)return;
+    const clip=(o.upper?D.upper:D.clips)[name]; if(!clip)return;
     if(one)one.a.stop();
     const a=mixer.clipAction(clip); a.reset(); a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished=true; a.timeScale=o.speed||1; a.paused=false; a.setEffectiveWeight(0); a.play();
     one={a,t:0,dur:clip.duration/(o.speed||1),hold:!!o.hold,holdAt:o.holdAt,upper:!!o.upper};
@@ -856,15 +895,15 @@ function buildHero(L){
   const head=bones.Head;
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
   if(head&&L.hat&&L.hat!=='None'){
-    const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=Math.PI/2; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
-    attachRaw(hg,.02,L.hat==='Pumpkin'?.84:.71,0);
+    const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=K.hat[4]; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
+    attachRaw(hg,K.hat[0],L.hat==='Pumpkin'?K.hat[3]:K.hat[1],K.hat[2]);
   }
   // the hand: tools attach here exactly as they do on the classic body
   const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
   const hb=bones.R_Hand, fa=bones.R_Forearm;
   Pp.hand=new THREE.Object3D(); g.add(Pp.hand);
   if(hb){const hp=hb.getWorldPosition(new THREE.Vector3()); if(fa){const d=hp.clone().sub(fa.getWorldPosition(new THREE.Vector3())).normalize();hp.addScaledVector(d,.1);} Pp.hand.position.copy(hp); Pp.hand.updateMatrixWorld(true); hb.attach(Pp.hand);}
-  g.userData={P:Pp,anim,act,stopAct,hero:true};
+  g.userData={P:Pp,anim,act,stopAct,hero:true,girl:!!girl};
   return g;
 }
 function buildSkeleton(){
@@ -2434,7 +2473,7 @@ function updatePlayer(dt){
   const len=Math.hypot(ix,iz);
   if(fish&&len>.2&&fish.phase!=='done')cancelFishing();
   const run=keys.shift||Math.hypot(joy.x,joy.z)>.92; player.running=run;
-  const spd=(run?8.6:5.4)*(player.swing>0?.55:1);
+  const spd=(run?7.6:5.4)*(player.swing>0?.55:1);
   if(len>.15){ix/=Math.max(1,len);iz/=Math.max(1,len);tryMove(player.x+ix*spd*dt,player.z+iz*spd*dt);player.rot=angLerp(player.rot,Math.atan2(ix,iz),dt*12);player.walkT+=dt*spd*1.55;player.moving=Math.min(1,player.moving+dt*6);}
   else player.moving=Math.max(0,player.moving-dt*6);
   player.y=lerp(player.y,heightAt(player.x,player.z),Math.min(1,dt*14));
@@ -2502,12 +2541,13 @@ function openCreate(edit=false){
 }
 function renderCreateOpts(){
   const sw=(el,list,key)=>{$(el).innerHTML=list.map(c=>`<button class="sw ${LOOK[key]===c?'on':''}" style="background:${c}" data-v="${c}" aria-label="${key} ${c}"></button>`).join('');$(el).querySelectorAll('button').forEach(b=>b.onclick=()=>{LOOK[key]=b.dataset.v;sfx('ui');renderCreateOpts();rebuildPreview();});};
-  const ch=(el,list,key)=>{$(el).innerHTML=list.map(c=>`<button class="chip ${LOOK[key]===c?'on':''}" data-v="${c}">${c}</button>`).join('');$(el).querySelectorAll('button').forEach(b=>b.onclick=()=>{LOOK[key]=b.dataset.v;sfx('ui');renderCreateOpts();rebuildPreview();});};
+  const ch=(el,list,key)=>{$(el).innerHTML=list.map(c=>`<button class="chip ${LOOK[key]===c?'on':''}" data-v="${c}">${(key==='model'&&MODEL_LABEL[c])||c}</button>`).join('');$(el).querySelectorAll('button').forEach(b=>b.onclick=()=>{LOOK[key]=b.dataset.v;sfx('ui');renderCreateOpts();rebuildPreview();});};
   if(!LOOK.model)LOOK.model='Detailed';
   ch('#oModel',LOOK_OPTS.model,'model');
   const det=LOOK.model!=='Classic';
   $('#optStyle').hidden=det; $('#modelNote').hidden=!det;
-  $('#modelNote').textContent=HERO?'The detailed model has spiky hair. More hair styles are coming.':'Loading the detailed model…';
+  const girl=LOOK.model==='Girl', ready=girl?HEROINE:HERO;
+  $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. Hair, skin and outfit colors tint her.':'He has spiky hair. More hair styles are coming.';
   sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); ch('#oHat',LOOK_OPTS.hat,'hat');
 }
 $('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
