@@ -802,18 +802,20 @@ function addHat(L,head,opt){
   }
 }
 
-/* ---------- Pumpkin Pete: the player-made model, and a slow stroll around the plaza ---------- */
+/* ---------- Pumpkin Pete: the player-made rigged model, with a slow stroll around the plaza ---------- */
 const PETE_HOME={x:1.5,z:-3,r:6.5}, PETE_SPEED=1.25;
 let PETE=null, peteCol=null;
 function loadPete(){
   if(!THREE.GLTFLoader||!window.fetch)return;
   loadGLB('pete').then(gl=>{
-    const m=gl.scene, bones={};
-    m.traverse(o=>{if(o.isBone)bones[o.name.replace('pete_','')]=o;if(o.isMesh){o.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,skinning:!!o.isSkinnedMesh});o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+    const m=gl.scene;
+    m.traverse(o=>{if(o.isMesh){if(o.material.map)o.material.map.encoding=THREE.LinearEncoding;o.material.metalness=0;o.material.roughness=.85;o.material.needsUpdate=true;o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
     m.scale.setScalar(2.45);
     peteObj.children.forEach(c=>c.visible=false); peteObj.add(m);
-    const rest={}; for(const k in bones)rest[k]={p:bones[k].position.clone(),q:bones[k].quaternion.clone()};
-    PETE={bones,rest,state:'idle',t:rand(1,3),tx:P.pete.x,tz:P.pete.z,walk:0,ph:0,wave:0,rot:peteObj.rotation.y};
+    const mixer=new THREE.AnimationMixer(m), clip=n=>gl.animations.find(c=>c.name===n)||gl.animations[0];
+    const aIdle=mixer.clipAction(clip('idle')), aWalk=mixer.clipAction(clip('walk'));
+    aIdle.play(); aWalk.play(); aWalk.setEffectiveWeight(0); aWalk.timeScale=1.15;
+    PETE={mixer,aIdle,aWalk,state:'idle',t:rand(1,3),tx:P.pete.x,tz:P.pete.z,walk:0,rot:peteObj.rotation.y};
   }).catch(()=>{PETE=null;});
 }
 function peteClear(x0,z0,x1,z1){ // a straight walk that stays in the plaza and misses everything solid
@@ -825,7 +827,7 @@ function peteClear(x0,z0,x1,z1){ // a straight walk that stays in the plaza and 
 }
 function updatePete(dt){
   if(!PETE||!peteObj)return;
-  const p=PETE, b=p.bones, talking=modalOpen&&TALKING_TO==='pete';
+  const p=PETE, talking=modalOpen&&TALKING_TO==='pete';
   p.t-=dt;
   if(talking){p.state='talk';p.t=2.2;}
   else if(p.state==='talk'&&p.t<=0){p.state='idle';p.t=rand(1.5,3);}
@@ -838,7 +840,7 @@ function updatePete(dt){
   if(p.state==='walk'){
     const dx=p.tx-P.pete.x, dz=p.tz-P.pete.z, d=Math.hypot(dx,dz);
     const blocked=Math.hypot(player.x-P.pete.x,player.z-P.pete.z)<1.6&&(dx*(player.x-P.pete.x)+dz*(player.z-P.pete.z))>0;
-    if(d<.15){p.state='idle';p.t=rand(4,9);if(Math.random()<.5)p.wave=2.4;}
+    if(d<.15){p.state='idle';p.t=rand(4,9);}
     else if(!blocked){want=1;face=Math.atan2(dx,dz);const st=Math.min(d,PETE_SPEED*dt*p.walk);P.pete.x+=dx/d*st;P.pete.z+=dz/d*st;}
   }
   if(p.state==='talk')face=Math.atan2(player.x-P.pete.x,player.z-P.pete.z);
@@ -847,17 +849,8 @@ function updatePete(dt){
   peteObj.rotation.y=p.rot; peteObj.position.set(P.pete.x,.5,P.pete.z);
   if(peteCol){peteCol.x=P.pete.x;peteCol.z=P.pete.z;}
   if(MARKS.pete){MARKS.pete.position.x=P.pete.x;MARKS.pete.position.z=P.pete.z;}
-  // the stroll: legs and arm swing, a little bob and sway; waves now and then when he stops
-  const w=p.walk; p.ph+=dt*(4.6*w); if(p.wave>0)p.wave-=dt;
-  const R=p.rest, s=Math.sin(p.ph), c2=Math.cos(p.ph*2), br=Math.sin(clock*1.7);
-  const set=(n,x,y,z)=>{const bn=b[n];if(!bn)return;bn.quaternion.copy(R[n].q);bn.rotateX(x);bn.rotateY(y);bn.rotateZ(z);};
-  set('legL',s*.55*w,0,0); set('legR',-s*.55*w,0,0);
-  set('armL',-s*.4*w,0,.05*br*(1-w));
-  const waving=p.wave>0||p.state==='talk';
-  set('armR',s*.25*w,0,(waving?Math.sin(clock*7)*.28:.04*br)*(1-w));
-  set('chest',.02*br*(1-w),Math.sin(p.ph)*.12*w,0);
-  set('head',0,Math.sin(clock*.6)*.12*(1-w),Math.sin(p.ph)*.06*w+Math.sin(clock*.8)*.05*(1-w));
-  if(b.hips){b.hips.position.copy(R.hips.p);b.hips.position.y+=Math.abs(c2)*.012*w+.004*br*(1-w);}
+  // Pete's own Tripo animations: a look-around idle and a walk, blended by how fast he is going
+  p.aIdle.setEffectiveWeight(1-p.walk); p.aWalk.setEffectiveWeight(p.walk); p.mixer.update(dt);
 }
 /* ---------- Detailed hero (Tripo3D model, rigged and animated with Tripo motion presets) ---------- */
 let HERO=null;                       // {scene, clips, upper} once models/hero.glb has loaded

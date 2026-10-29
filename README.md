@@ -41,5 +41,5 @@ The player character is a 3D model generated with Tripo3D, split into parts, rig
 - `index.html` — the whole game (three.js r128, loaded from cdnjs and cached for offline use)
 - `models/hero.glb` — the rigged player character
 - `models/heroine.glb` — the rigged girl character (her own idle, walk and run; the boy's actions retargeted onto her)
-- `models/pete.glb` — Pumpkin Pete (your model, cut down and given a simple skeleton so he can stroll the plaza)
+- `models/pete.glb` — Pumpkin Pete (your rigged Tripo model with his own idle and walk)
 - `manifest.webmanifest`, `sw.js`, `icons/` — what makes it installable as an app
