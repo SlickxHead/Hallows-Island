@@ -2,7 +2,7 @@
 
 A cozy-spooky 3D top-down island adventure that runs in the browser and installs on your phone as a full-screen app.
 
-Create your character, then explore a moonlit island: take quests from Pumpkin Pete, fish off the dock, mine glowing crystals, harvest pumpkins, fight skeletons in the graveyard, trade with Hazel the merchant, and build, upgrade and decorate your house inside and out.
+Create your character, then explore a moonlit island: take quests from Pumpkin Pete, fish off the dock, mine glowing crystals, chop trees for wood, harvest pumpkins, fight skeletons in the graveyard, trade with Hazel the merchant, and build, upgrade and decorate your house inside and out.
 
 ## Play
 
@@ -34,7 +34,7 @@ After the first launch the game works offline. Progress is saved on the device.
 
 ## Characters
 
-The player character is a 3D model generated with Tripo3D, split into parts and rigged with a skeleton. The game colors it from your character-creator choices and animates its bones in code (walking, sword swings, fishing, mining). The original blocky character is still available as **Classic** in the character creator.
+The player character is a 3D model generated with Tripo3D, split into parts, rigged, and animated with Tripo motion presets: idle, walk, run, slash, cast, dig, lift, victory and a knock-down. The game colors it from your character-creator choices, blends walk and run by speed, and plays attacks on the upper body so you can fight while moving. The original blocky character is still available as **Classic** in the character creator.
 
 ## Files
 

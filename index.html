@@ -461,6 +461,7 @@ const ITEMS={
   amethyst:{name:'Amethyst',sell:40,desc:'A violet gem that hums faintly in your hand.'},
   moonstone:{name:'Moonstone',sell:120,desc:'Rare and cool to the touch. Glows when the moon is up.'},
   bone:{name:'Old Bone',sell:15,desc:'Dropped by graveyard skeletons. Still rattling a little.'},
+  wood:{name:'Wood',sell:8,desc:'Chopped from the island\u2019s trees. Used for furniture, fences and house upgrades.'},
   moonfish:{name:'Moonfish',sell:30,fish:1,color:'#8fb8ff',desc:'Common catch with silver-blue scales.'},
   perch:{name:'Pumpkin Perch',sell:55,fish:1,color:'#ff8a2a',desc:'Bright orange and a little round.'},
   ghostcarp:{name:'Ghost Carp',sell:70,fish:1,color:'#d6f2ec',desc:'Nearly see-through. Prefers still water.'},
@@ -480,7 +481,8 @@ const QUESTS=[
   {id:'fish',title:'Supper by Moonlight',text:"I'm hosting a moonlit supper and I'm short on fish. Catch 2 of any kind for me?",needFish:2,reward:{coin:350,seeds:3},hint:'Fish from the end of the dock on Moonlit Beach. Press E to cast, then again when you see the bite.'},
   {id:'pumpkins',title:'Patch Work',text:'Harvest season waits for no one. Bring me 5 pumpkins from the patch, would you?',need:{pumpkin:5},reward:{coin:400,lantern:1},hint:'The Pumpkin Patch is southwest of the village. Ripe pumpkins glow a little.'},
   {id:'gems',title:'Glimmer in the Dark',text:'Glimmer Cave is full of amethyst. Bring me 3 and I will pay you in something useful.',need:{amethyst:3},reward:{coin:600,kit:1},hint:'Glimmer Cave is northwest. Swing at the crystal rocks out front with E.'},
-  {id:'house',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells kits, and I just gave you one.',flag:'house2',reward:{coin:800,moonstone:1},hint:'Open Build (B) near your house. The House tab shows what the upgrade needs.'},
+  {id:'house',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells kits, and I just gave you one.',flag:'house2',reward:{coin:800,moonstone:1},hint:'Open Build (B) near your house. The House tab shows what the upgrade needs. Chop trees for the wood.'},
+  {id:'timber',title:'Timber!',text:'Half the fences in the village are falling over. Chop down a few trees and bring me 8 pieces of wood?',need:{wood:8},reward:{coin:450,seeds:2,tonic:1},hint:'Walk up to any tree and press E or USE to swing your axe. Three chops fells it, and trees grow back after a couple of minutes.'},
 ];
 const LORE=[
   'Hazel runs the stall by the plaza. She will buy anything you drag home: fish, ore, even old bones.',
@@ -492,27 +494,27 @@ const LORE=[
   'Your yard is yours to dress up. Press B near home to build and decorate. Garden plots grow pumpkins from seed.',
   'There are old chests tucked around the island. Walk the beaches and cliffs and you might trip over one.',
 ];
-const HOUSE_UP={2:{kit:1,stone:10},3:{kit:1,stone:20,amethyst:5,moonstone:1}};
+const HOUSE_UP={2:{kit:1,stone:10,wood:10},3:{kit:1,stone:20,wood:20,amethyst:5,moonstone:1}};
 const HOUSE_NAMES={1:'Cottage',2:'Hollow House',3:'Lantern Manor'};
 const DECOS={
   jack:{name:"Jack-o'-Lantern",tab:'Decorations',tabIn:'Decor',where:'both',cost:{pumpkin:1,coin:20},r:.6},
   lamp:{name:'Decorative Lantern',tab:'Decorations',where:'out',cost:{lantern:1},r:.4},
   crystal:{name:'Crystal Lamp',tab:'Decorations',tabIn:'Lighting',where:'both',cost:{amethyst:2},r:.6},
   grave:{name:'Spooky Gravestone',tab:'Decorations',where:'out',cost:{bone:3,stone:2},r:.6},
-  bench:{name:'Wooden Bench',tab:'Furniture',where:'both',cost:{coin:150},r:.9},
-  table:{name:'Picnic Table',tab:'Furniture',where:'out',cost:{coin:220},r:1.3},
+  bench:{name:'Wooden Bench',tab:'Furniture',where:'both',cost:{wood:4,coin:60},r:.9},
+  table:{name:'Picnic Table',tab:'Furniture',where:'out',cost:{wood:6,coin:80},r:1.3},
   cauldron:{name:'Bubbling Cauldron',tab:'Furniture',where:'both',cost:{coin:300,stone:4},r:.8},
-  plot:{name:'Garden Plot',tab:'Farming',where:'out',cost:{coin:120},r:.0,walk:true},
-  scarecrow:{name:'Scarecrow',tab:'Farming',where:'out',cost:{pumpkin:2,coin:80},r:.5},
+  plot:{name:'Garden Plot',tab:'Farming',where:'out',cost:{wood:3,coin:60},r:.0,walk:true},
+  scarecrow:{name:'Scarecrow',tab:'Farming',where:'out',cost:{pumpkin:2,wood:2,coin:30},r:.5},
   hay:{name:'Hay Bale',tab:'Farming',where:'out',cost:{coin:60},r:.8},
-  fence:{name:'Picket Fence',tab:'Other',where:'out',cost:{coin:30},r:0,walk:true},
+  fence:{name:'Picket Fence',tab:'Other',where:'out',cost:{wood:2},r:0,walk:true},
   bush:{name:'Autumn Shrub',tab:'Other',where:'out',cost:{coin:40},r:.6},
   stones:{name:'Stepping Stones',tab:'Other',where:'out',cost:{stone:3},r:0,walk:true,flat:true},
-  bed:{name:'Cozy Bed',tab:'Furniture',where:'in',cost:{coin:200},r:1.1},
-  armchair:{name:'Armchair',tab:'Furniture',where:'in',cost:{coin:160},r:.7},
-  dtable:{name:'Dining Table',tab:'Furniture',where:'in',cost:{coin:240},r:1.2},
-  shelf:{name:'Bookshelf',tab:'Furniture',where:'in',cost:{coin:180},r:.8},
-  wardrobe:{name:'Wardrobe',tab:'Furniture',where:'in',cost:{coin:260,stone:2},r:.8},
+  bed:{name:'Cozy Bed',tab:'Furniture',where:'in',cost:{wood:6,coin:100},r:1.1},
+  armchair:{name:'Armchair',tab:'Furniture',where:'in',cost:{wood:3,coin:90},r:.7},
+  dtable:{name:'Dining Table',tab:'Furniture',where:'in',cost:{wood:6,coin:100},r:1.2},
+  shelf:{name:'Bookshelf',tab:'Furniture',where:'in',cost:{wood:5,coin:80},r:.8},
+  wardrobe:{name:'Wardrobe',tab:'Furniture',where:'in',cost:{wood:8,stone:2,coin:60},r:.8},
   rug:{name:'Harvest Rug',tab:'Decor',where:'in',cost:{coin:80},r:0,flat:true},
   plant:{name:'Potted Fern',tab:'Decor',where:'in',cost:{coin:60},r:.4},
   fishtank:{name:'Fish Tank',tab:'Decor',where:'in',cost:{coin:150,moonfish:2},r:.75},
@@ -742,19 +744,19 @@ function addHat(L,head,opt){
     const ph=buildPumpkin(.26); ph.position.y=.26; ph.rotation.z=.15; head.add(ph);
   }
 }
-/* ---------- Detailed hero (Tripo3D model, rigged; posed from code) ---------- */
-let HERO=null;                       // {scene} once models/hero.glb has loaded
+/* ---------- Detailed hero (Tripo3D model, rigged and animated with Tripo motion presets) ---------- */
+let HERO=null;                       // {scene, clips, upper} once models/hero.glb has loaded
 const HERO_SCALE=2.05;
 // what each generated part is, by Tripo part number
 const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boot',7:'outfit',8:'skin',9:'outfit',10:'skin',11:'outfit',12:'hair',13:'hair'};
-const ARM_DOWN=1.2, ELBOW=.32, ARM_FWD=-.1, ARM_TWIST=Math.PI/2;
+const LOWER_BONES=/^(Root|Hip|Pelvis|[LR]_(Thigh|Calf|Foot|Toe))/;
 function loadHero(){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||!window.fetch)return;
-  const b64=()=>fetch('models/hero.b64.txt').then(r=>{if(!r.ok)throw new Error('missing');return r.text();}).then(t=>{const s=atob(t.trim()),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;});
-  fetch('models/hero.glb').then(r=>{if(!r.ok)throw new Error('missing');return r.arrayBuffer();}).catch(b64)
-  .then(buf=>new Promise((res,rej)=>new THREE.GLTFLoader().parse(buf,'',res,rej)))
-  .then(gl=>{
-    HERO={scene:gl.scene};
+  loadGLB('hero').then(gl=>{
+    const clips={}, upper={};
+    for(const c of gl.animations){clips[c.name]=c;const u=c.clone();u.name=c.name+'_upper';u.tracks=u.tracks.filter(t=>!LOWER_BONES.test(t.name));upper[c.name]=u;}
+    if(!clips.idle||!clips.walk)throw new Error('no animations');
+    HERO={scene:gl.scene,clips,upper};
     if(S&&player.model&&S.look.model!=='Classic'){const t=player.tool;rebuildPlayer();if(t)setTool(t);}
     if(mode==='create'){renderCreateOpts();rebuildPreview();}
   }).catch(()=>{HERO=null;});
@@ -764,38 +766,35 @@ function faceTexture(L){
   const W=512,H=Math.round(512*FACE_UV.h/FACE_UV.w), c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
   const X=z=>(z-FACE_UV.z0)/FACE_UV.w*W, Y=y=>(1-(y-FACE_UV.y0)/FACE_UV.h)*H, S=d=>d/FACE_UV.w*W;
   g.fillStyle=L.skin; g.fillRect(0,0,W,H);
-  // front fringe and anything above the hairline takes the hair colour
   g.fillStyle=L.hair; g.fillRect(0,0,W,Y(.763));
   const grd=g.createLinearGradient(0,Y(.763),0,Y(.752)); grd.addColorStop(0,L.hair); grd.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=grd; g.fillRect(0,Y(.763),W,Y(.752)-Y(.763));
-  // blush
   for(const [y,z] of [[.664,.084],[.666,-.136]]){const r=g.createRadialGradient(X(z),Y(y),0,X(z),Y(y),S(.034));r.addColorStop(0,'rgba(236,120,110,.75)');r.addColorStop(1,'rgba(236,120,110,0)');g.fillStyle=r;g.beginPath();g.ellipse(X(z),Y(y),S(.034),S(.024),0,0,TAU);g.fill();}
-  // eyes, on the sculpted eyeballs
   for(const [y,z] of [[.698,.028],[.700,-.094]]){
     g.fillStyle='#1d1410'; g.beginPath(); g.ellipse(X(z),Y(y),S(.022),S(.029),0,0,TAU); g.fill();
     g.fillStyle='#4a2c1e'; g.beginPath(); g.ellipse(X(z),Y(y-.008),S(.014),S(.014),0,0,TAU); g.fill();
     g.fillStyle='#1d1410'; g.beginPath(); g.ellipse(X(z),Y(y-.004),S(.009),S(.01),0,0,TAU); g.fill();
     g.fillStyle='#ffffff'; g.beginPath(); g.ellipse(X(z+.008),Y(y+.011),S(.0075),S(.0085),0,0,TAU); g.fill();
     g.beginPath(); g.ellipse(X(z-.009),Y(y-.012),S(.0035),S(.0035),0,0,TAU); g.fill();
-    // brow
     g.strokeStyle=L.hair; g.lineWidth=S(.0055); g.lineCap='round'; g.beginPath(); g.arc(X(z),Y(y+.012),S(.028),Math.PI*1.25,Math.PI*1.75); g.stroke();
   }
-  // smile along the sculpted mouth
   g.strokeStyle='#6b2a20'; g.lineWidth=S(.0045); g.lineCap='round'; g.beginPath(); g.arc(X(-.046),Y(.661),S(.019),Math.PI*.22,Math.PI*.78); g.stroke();
   const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
 }
 function makeCharacter(L){return (L.model!=='Classic'&&HERO)?buildHero(L):buildCharacter(L);}
+function heroAct(name,o){const u=player.model&&player.model.userData;if(u&&u.act)u.act(name,o||{});}
+function heroStop(){const u=player.model&&player.model.userData;if(u&&u.stopAct)u.stopAct();}
 function buildHero(L){
   const g=new THREE.Group(), fix=new THREE.Group();
   fix.rotation.y=-Math.PI/2; fix.scale.setScalar(HERO_SCALE); g.add(fix);
   const src=THREE.SkeletonUtils.clone(HERO.scene); fix.add(src);
   const bones={}, hatted=L.hat==='Witch Hat'||L.hat==='Beanie';
   src.traverse(o=>{
-    if(o.isBone)bones[o.name.replace(/^tripo:*/,'')]=o;
+    if(o.isBone)bones[o.name]=o;
     if(o.isMesh){
       const role=HERO_ROLE[+o.name.replace(/\D+/g,'')]||'outfit';
       const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:'#2b2622',boot:'#4a3122'}[role];
       o.material=new THREE.MeshStandardMaterial({color:col,roughness:role==='hair'?.6:.85,skinning:true});
-      if(o.name.endsWith('_2')){ // the face piece: paint eyes, brows, blush, mouth and the front fringe onto it
+      if(o.name.endsWith('_2')){ // the face piece: eyes, brows, blush, mouth and the front fringe are painted on
         o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2);
         for(let i=0;i<p.count;i++){uv[i*2]=(p.getZ(i)-FACE_UV.z0)/FACE_UV.w; uv[i*2+1]=(p.getY(i)-FACE_UV.y0)/FACE_UV.h;}
         o.geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
@@ -806,43 +805,51 @@ function buildHero(L){
         for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>.70)p.setY(i,.70+(y-.70)*.5);}
         p.needsUpdate=true; o.geometry.computeBoundingSphere();
       }
+      o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
     }
   });
-  g.updateMatrixWorld(true);
-  const ctl=['Spine_0','1_Left_Limb_0','1_Right_Limb_0','1_Left_Limb_1','1_Right_Limb_1','0_Left_Limb_0','0_Right_Limb_0','0_Left_Limb_1','0_Right_Limb_1'];
-  const rest={}, qi=new THREE.Quaternion();
-  for(const n of ctl){const b=bones[n];if(!b)continue;const pq=b.parent.getWorldQuaternion(new THREE.Quaternion());rest[n]={b,q:b.quaternion.clone(),pq,pqi:pq.clone().invert()};}
-  const D=new THREE.Quaternion(), E=new THREE.Euler(), Q1=new THREE.Quaternion(), Q2=new THREE.Quaternion(), AX=new THREE.Vector3(1,0,0), AZ=new THREE.Vector3(0,0,1);
-  const setQ=(n,q)=>{const r=rest[n];if(!r)return;r.b.quaternion.copy(r.pqi).multiply(q).multiply(r.pq).multiply(r.q);};
-  // arm: twist palms toward the body, lower it, then swing it forward/back
-  const armQ=(swing,down)=>{D.setFromAxisAngle(AX,swing);Q1.setFromAxisAngle(AZ,down);Q2.setFromAxisAngle(AX,ARM_TWIST);return D.multiply(Q1).multiply(Q2);};
-  const setB=(n,x,y,z,order)=>{const r=rest[n];if(!r)return;E.set(x,y,z,order||'XYZ');D.setFromEuler(E);r.b.quaternion.copy(r.pqi).multiply(D).multiply(r.pq).multiply(r.q);};
-  // proxies that the game already animates; pose() turns them into bone rotations
-  const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
-  const pose=()=>{
-    fix.position.y=Pp.body.position.y;
-    setB('Spine_0',0,Pp.body.rotation.y,0);
-    setQ('1_Left_Limb_0',armQ(Pp.armL.rotation.x+ARM_FWD,-ARM_DOWN-Pp.armL.rotation.z));
-    setQ('1_Right_Limb_0',armQ(Pp.armR.rotation.x+ARM_FWD,ARM_DOWN+Pp.armR.rotation.z));
-    setB('1_Left_Limb_1',0,0,ELBOW); setB('1_Right_Limb_1',0,0,-ELBOW);
-    const lL=Pp.legL.rotation.x, lR=Pp.legR.rotation.x;
-    setB('0_Left_Limb_0',lL,0,0); setB('0_Right_Limb_0',lR,0,0);
-    setB('0_Left_Limb_1',Math.max(0,lL)*1.1,0,0); setB('0_Right_Limb_1',Math.max(0,lR)*1.1,0,0);
+  // locomotion loops blend by speed; one action at a time plays over them
+  const mixer=new THREE.AnimationMixer(src);
+  const loopA=n=>{const a=mixer.clipAction(HERO.clips[n]);a.play();a.setEffectiveWeight(0);return a;};
+  const base={idle:loopA('idle'),walk:loopA('walk'),run:loopA('run')}; base.idle.setEffectiveWeight(1);
+  base.walk.timeScale=2.0; base.run.timeScale=1.9;
+  let one=null, runW=0;
+  const OVER=12; // action weight: overrides the loops on the bones it animates
+  const act=(name,o)=>{
+    const clip=(o.upper?HERO.upper:HERO.clips)[name]; if(!clip)return;
+    if(one)one.a.stop();
+    const a=mixer.clipAction(clip); a.reset(); a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished=true; a.timeScale=o.speed||1; a.paused=false; a.setEffectiveWeight(0); a.play();
+    one={a,t:0,dur:clip.duration/(o.speed||1),hold:!!o.hold,holdAt:o.holdAt,upper:!!o.upper};
   };
-  pose(); g.updateMatrixWorld(true);
-  // face and hat, built in the model's own space then handed to the head bone
-  const head=bones.Head_2||bones.Head_0;
+  const stopAct=()=>{if(one){one.a.stop();one=null;}};
+  const anim=(dt,s)=>{
+    const mv=s.move||0; runW+=((s.run?1:0)-runW)*Math.min(1,dt*6);
+    base.idle.setEffectiveWeight(Math.max(0,1-mv)); base.walk.setEffectiveWeight(mv*(1-runW)); base.run.setEffectiveWeight(mv*runW);
+    if(one){
+      one.t+=dt;
+      const holding=one.hold||one.holdAt!=null;
+      if(one.holdAt!=null&&one.a.time>=one.holdAt)one.a.paused=true;
+      if(!holding&&!one.upper&&mv>.3)one.t=Math.max(one.t,one.dur-.15); // walking cancels crouching actions
+      let w=OVER*Math.min(1,one.t/.08); if(!holding)w*=Math.max(0,Math.min(1,(one.dur-one.t)/.15));
+      one.a.setEffectiveWeight(w);
+      if(!holding&&one.t>=one.dur){one.a.stop();one=null;}
+    }
+    mixer.update(dt);
+  };
+  anim(0,{}); g.updateMatrixWorld(true);
+  // hat, built in the model's own space then handed to the head bone
+  const head=bones.Head;
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
-  if(L.hat&&L.hat!=='None'){
+  if(head&&L.hat&&L.hat!=='None'){
     const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=Math.PI/2; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
     attachRaw(hg,.02,L.hat==='Pumpkin'?.84:.71,0);
   }
   // the hand: tools attach here exactly as they do on the classic body
-  const hb=bones['1_Right_Limb_2']||bones['1_Right_Limb_1'];
+  const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
+  const hb=bones.R_Hand, fa=bones.R_Forearm;
   Pp.hand=new THREE.Object3D(); g.add(Pp.hand);
-  const hp=(bones['1_Right_Limb_4']||hb).getWorldPosition(new THREE.Vector3()); Pp.hand.position.copy(hp); Pp.hand.updateMatrixWorld(true);
-  hb.attach(Pp.hand);
-  g.userData.P=Pp; g.userData.pose=pose; g.userData.hero=true;
+  if(hb){const hp=hb.getWorldPosition(new THREE.Vector3()); if(fa){const d=hp.clone().sub(fa.getWorldPosition(new THREE.Vector3())).normalize();hp.addScaledVector(d,.1);} Pp.hand.position.copy(hp); Pp.hand.updateMatrixWorld(true); hb.attach(Pp.hand);}
+  g.userData={P:Pp,anim,act,stopAct,hero:true};
   return g;
 }
 function buildSkeleton(){
@@ -1406,7 +1413,7 @@ function buildFlora(){
   }
   for(let i=0;i<120;i++){const a=sr(0,TAU),d=Math.sqrt(srand())*(R(a)-2);const x=Math.cos(a)*d,z=Math.sin(a)*d;if(ZONES.some(zn=>Math.hypot(x-zn.x,z-zn.z)<zn.r*.8)||distToPath(x,z)<2)continue;(srand()<.4?rocks:bush).push({x,z,s:sr(.4,1),r:sr(0,TAU)});}
   const o=new THREE.Object3D(), col=new THREE.Color();
-  const inst=(geo,mat,list,fn)=>{const im=new THREE.InstancedMesh(geo,mat,list.length);list.forEach((t,i)=>{fn(o,t,i);o.updateMatrix();im.setMatrixAt(i,o.matrix);});im.castShadow=true;im.receiveShadow=true;scene.add(im);return im;};
+  const inst=(geo,mat,list,fn)=>{const im=new THREE.InstancedMesh(geo,mat,list.length);im.frustumCulled=false;list.forEach((t,i)=>{fn(o,t,i);o.updateMatrix();im.setMatrixAt(i,o.matrix);});im.castShadow=true;im.receiveShadow=true;scene.add(im);return im;};
   const pineM=[], autM=[];
   pineM.push(inst(Cyl(.16,.24,1.4,6),M('#3b2a1e'),pine,(o,t)=>{o.position.set(t.x,.5+.7*t.s,t.z);o.rotation.set(0,t.r,0);o.scale.setScalar(t.s);}));
   [[1.5,1.9,1.5],[1.15,1.6,2.4],[.78,1.3,3.2]].forEach(([r,h,y],k)=>pineM.push(inst(Cone(r,h,7),M(['#1d3a33','#22433a','#284a3e'][k],{flatShading:true}),pine,(o,t)=>{o.position.set(t.x,.5+y*t.s,t.z);o.rotation.set(0,t.r+k,0);o.scale.setScalar(t.s);})));
@@ -1420,7 +1427,8 @@ function buildFlora(){
   inst(new THREE.DodecahedronGeometry(.8,0),M('#5b5966',{flatShading:true}),rocks,(o,t)=>{o.position.set(t.x,.5+.2*t.s,t.z);o.rotation.set(t.r,t.r,t.r);o.scale.set(t.s,t.s*.6,t.s);});
   const bm=inst(new THREE.IcosahedronGeometry(.6,0),new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.9,flatShading:true}),bush,(o,t)=>{o.position.set(t.x,.6,t.z);o.rotation.set(0,t.r,0);o.scale.set(t.s,t.s*.75,t.s);});
   bush.forEach((t,i)=>{col.set(['#2f4f2a','#3d5a2a','#8a4a22','#6a3a5a'][i%4]);bm.setColorAt(i,col);});
-  pine.forEach(t=>addCol(t.x,t.z,.55*t.s));aut.forEach(t=>addCol(t.x,t.z,.5*t.s));rocks.forEach(t=>addCol(t.x,t.z,.6*t.s));
+  pine.forEach((t,i)=>{t.kind='pine';t.i=i;t.colR=.55*t.s;t.col=addCol(t.x,t.z,t.colR);});aut.forEach((t,i)=>{t.kind='aut';t.i=i;t.colR=.5*t.s;t.col=addCol(t.x,t.z,t.colR);});
+  [...pine,...aut].forEach(t=>{t.hp=3;t.state='up';TREES.push(t);INTER.push({x:t.x,z:t.z,r:1.4+.8*t.s,label:()=>t.state==='up'?'Chop tree':null,act:()=>chopTree(t)});});rocks.forEach(t=>addCol(t.x,t.z,.6*t.s));
   // little scattered pumpkins and flowers in the meadows
   for(let i=0;i<26;i++){const a=sr(0,TAU),d=Math.sqrt(srand())*(R(a)-4);const x=Math.cos(a)*d,z=Math.sin(a)*d;if(ZONES.some(zn=>Math.hypot(x-zn.x,z-zn.z)<zn.r)||distToPath(x,z)<1.5)continue;const p=buildPumpkin(sr(.22,.36),srand()<.2);p.position.set(x,.5,z);p.rotation.y=sr(0,6);scene.add(p);}
 }
@@ -1458,9 +1466,63 @@ function loadTrees(){
       const mat=src.material; mat.metalness=0; mat.roughness=.92; if(mat.map){mat.map.encoding=THREE.LinearEncoding;mat.map.anisotropy=4;mat.map.needsUpdate=true;} mat.needsUpdate=true;
       const im=new THREE.InstancedMesh(geo,mat,F.list.length), o=new THREE.Object3D(), c=new THREE.Color();
       F.list.forEach((t,i)=>{o.position.set(t.x,.48,t.z);o.rotation.set(0,t.r,0);o.scale.setScalar(t.s);o.updateMatrix();im.setMatrixAt(i,o.matrix);c.set(def.tints[i%def.tints.length]);im.setColorAt(i,c);});
-      im.castShadow=true; im.receiveShadow=true; scene.add(im);
+      im.castShadow=true; im.receiveShadow=true; im.frustumCulled=false; scene.add(im);
       F.meshes.forEach(m=>scene.remove(m)); F.meshes=[im];
+      TREES.forEach(t=>{if(t.kind===k&&t.state==='down')setTreeTransform(t,null,.0001);});
     }).catch(()=>{});
+  }
+}
+
+
+/* ---------- Chopping trees ---------- */
+const TREES=[], ACTIVE_TREES=new Set();
+let chopCD=0, stumpGeo=null;
+const _tm=new THREE.Matrix4(), _tr=new THREE.Matrix4(), _tq=new THREE.Quaternion(), _ta=new THREE.Vector3();
+function setTreeTransform(t,q,sc){
+  for(const m of FLORA[t.kind].meshes){
+    const B=m.userData.base||(m.userData.base=[]);
+    let b=B[t.i]; if(!b){b=new THREE.Matrix4();m.getMatrixAt(t.i,b);B[t.i]=b;}
+    _tm.makeTranslation(t.x,.5,t.z);
+    if(q)_tm.multiply(_tr.makeRotationFromQuaternion(q));
+    if(sc!==1)_tm.multiply(_tr.makeScale(sc,sc,sc));
+    _tm.multiply(_tr.makeTranslation(-t.x,-.5,-t.z)).multiply(b);
+    m.setMatrixAt(t.i,_tm); m.instanceMatrix.needsUpdate=true;
+  }
+}
+function chopTree(t){
+  if(chopCD>0||t.state!=='up')return;
+  setTool('axe'); faceTo(t.x,t.z); player.swing=player.swingDur; chopCD=.7; heroAct('slash',{speed:2.4});
+  setTimeout(()=>{
+    if(t.state!=='up')return;
+    t.hp--; sfx('chop'); t.shake=.35; t.dx=t.x-player.x; t.dz=t.z-player.z; const dl=Math.hypot(t.dx,t.dz)||1; t.dx/=dl; t.dz/=dl; ACTIVE_TREES.add(t);
+    burst(t.x-t.dx*.4,1.1,t.z-t.dz*.4,'#c99a5a',9,3,.22,.5);
+    for(let i=0;i<5;i++)puff({x:t.x+rand(-1,1),y:3+rand(0,1.5),z:t.z+rand(-1,1),vx:rand(-.6,.6),vy:-rand(.4,1),vz:rand(-.6,.6),color:t.kind==='pine'?'#3f7a6a':'#e0883a',size:.25,life:1.4,normal:true});
+    if(t.hp<=0){t.state='fall';t.fall=0;t.col.r=0;sfx('break');}
+  },300);
+}
+function updateTrees(dt){
+  chopCD=Math.max(0,chopCD-dt);
+  for(const t of ACTIVE_TREES){
+    _ta.set(t.dz||0,0,-(t.dx||0)); if(_ta.lengthSq()<1e-6)_ta.set(1,0,0); _ta.normalize();
+    if(t.state==='up'){
+      t.shake-=dt; _tq.setFromAxisAngle(_ta,Math.sin(t.shake*45)*.07*Math.max(0,t.shake)/.35); setTreeTransform(t,_tq,1);
+      if(t.shake<=0){setTreeTransform(t,null,1);ACTIVE_TREES.delete(t);}
+    }else if(t.state==='fall'){
+      t.fall=Math.min(1,t.fall+dt/.9); _tq.setFromAxisAngle(_ta,t.fall*t.fall*1.5); setTreeTransform(t,_tq,1);
+      if(t.fall>=1){
+        t.state='down'; t.regrow=120; setTreeTransform(t,null,.0001); sfx('hit'); shake=.15;
+        burst(t.x+t.dx*3,1,t.z+t.dz*3,t.kind==='pine'?'#3f7a6a':'#e0883a',22,4,.35,.9);
+        const n=t.kind==='pine'?3:2; give('wood',n,false,{x:t.x,y:2,z:t.z}); S.stats.wood=(S.stats.wood||0)+n; updateTracker();
+        if(!stumpGeo)stumpGeo=Cyl(.24,.3,.35,8);
+        t.stump=mk(stumpGeo,M('#5a3f2a'),t.x,.62,t.z,scene); t.stump.scale.setScalar(t.s);
+        if(Math.random()<.3){give('seeds',1,false,{x:t.x,y:2.6,z:t.z});}
+      }
+    }else if(t.state==='down'){
+      t.regrow-=dt; if(t.regrow<=0){t.state='grow';t.g=0;if(t.stump){scene.remove(t.stump);t.stump=null;}}
+    }else if(t.state==='grow'){
+      t.g=Math.min(1,t.g+dt/1.2); const e=1-Math.pow(1-t.g,3); setTreeTransform(t,null,Math.max(.0001,e));
+      if(t.g>=1){t.state='up';t.hp=3;t.col.r=t.colR;setTreeTransform(t,null,1);ACTIVE_TREES.delete(t);}
+    }
   }
 }
 
@@ -1509,6 +1571,7 @@ function sfx(type){
       case 'ui':tone(700,0,.05,'triangle',.07);break;
       case 'error':tone(220,160,.18,'square',.06);break;
       case 'quest':[392,523,659,784,1046].forEach((f,i)=>tone(f,0,.25,'triangle',.1,i*.1));break;
+      case 'chop':tone(190,90,.12,'square',.09);noise(.1,.28,700);break;
       case 'build':noise(.12,.2,500);tone(330,0,.1,'square',.06,.08);break;
     }
   }catch(e){}
@@ -1538,6 +1601,7 @@ function itemModel(id){
     case 'stone':{const r=buildRock(.55,'#8a8a96');r.scale.y=.8;g.add(r);break;}
     case 'amethyst':{g.add(buildCrystals('#a46bff',4,1.3));g.children[0].position.y=-.35;break;}
     case 'moonstone':{mk(new THREE.IcosahedronGeometry(.5,1),new THREE.MeshStandardMaterial({color:'#cfe8ff',emissive:'#5a9ae8',emissiveIntensity:.7,roughness:.2,flatShading:true}),0,0,0,g);break;}
+    case 'wood':{for(const [y,z] of [[-.2,-.2],[-.2,.2],[.15,0]]){const l=mk(Cyl(.2,.2,1,10),M('#8a5a32'),0,y,z,g);l.rotation.z=Math.PI/2;for(const k of [-1,1])mk(Cyl(.17,.17,.02,10),M('#d9b07a'),k*.505,y,z,g).rotation.z=Math.PI/2;}break;}
     case 'bone':{const b=mk(Cyl(.09,.09,1.1,8),M('#efe6cf'),0,0,0,g);b.rotation.z=.8;for(const s of [-1,1])for(const k of [-1,1])mk(Sph(.14,8,6),M('#efe6cf'),s*.4+k*.08,s*.36-k*.08,0,g);break;}
     default:{const d=buildDeco(id.replace('deco_',''));g.add(d);}
   }
@@ -1607,7 +1671,8 @@ function makeTools(){
   sw.rotation.x=Math.PI/2;
   const pk=new THREE.Group(); mk(Cyl(.035,.04,.95,6),M('#8a5a32'),0,.4,0,pk); const hd=mk(new THREE.TorusGeometry(.32,.05,5,12,Math.PI*.8),M('#9aa3ad',{metalness:.6,roughness:.4}),0,.86,0,pk); hd.rotation.z=Math.PI*.1; pk.rotation.x=Math.PI/2;
   const rod=new THREE.Group(); mk(Cyl(.025,.04,2.4,6),M('#6a4426'),0,1.1,0,rod); const tip=new THREE.Object3D(); tip.position.set(0,2.3,0); rod.add(tip); rod.rotation.x=Math.PI/2.6; rod.userData.tip=tip;
-  TOOLS={sword:sw,pick:pk,rod};
+  const ax=new THREE.Group(); mk(Cyl(.035,.04,.85,6),M('#8a5a32'),0,.36,0,ax); const ah=mk(Box(.08,.26,.3),M('#9aa3ad',{metalness:.6,roughness:.35}),0,.76,.1,ax); mk(Box(.085,.05,.32),M('#c8d0d8',{metalness:.7,roughness:.25}),0,.76,.26,ax); ax.rotation.x=Math.PI/2;
+  TOOLS={sword:sw,pick:pk,rod,axe:ax};
 }
 function setTool(t){if(player.tool===t)return;Object.values(TOOLS).forEach(o=>{if(o.parent)o.parent.remove(o);});if(t&&TOOLS[t])player.P.hand.add(TOOLS[t]);player.tool=t;}
 function rebuildPlayer(){
@@ -1692,9 +1757,9 @@ function hurtPlayer(d,src){
   refreshHUD();
 }
 function playerDown(){
-  player.dead=true; cancelFishing();
+  player.dead=true; cancelFishing(); heroAct('hurt',{hold:true});
   const lost=Math.floor(S.coins*.1);
-  fadeTo(()=>{S.coins-=lost;S.hp=S.maxHp;player.x=P.house.x+3;player.z=P.house.z+5;player.dead=false;refreshHUD();toast(lost?`You woke up at home. Dropped ${fmt(lost)} coins.`:'You woke up at home.');});
+  fadeTo(()=>{heroStop();S.coins-=lost;S.hp=S.maxHp;player.x=P.house.x+3;player.z=P.house.z+5;player.dead=false;refreshHUD();toast(lost?`You woke up at home. Dropped ${fmt(lost)} coins.`:'You woke up at home.');});
 }
 
 /* ---------- combat skills ---------- */
@@ -1703,14 +1768,14 @@ let slashFx=null;
 function makeSlashFx(){const m=new THREE.Mesh(new THREE.RingGeometry(1.4,2.3,24,1,-Math.PI*.4,Math.PI*.8),new THREE.MeshBasicMaterial({color:'#cfe0ff',transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));m.rotation.x=-Math.PI/2;scene.add(m);return m;}
 function doSlash(){
   if(!canAct()||player.cd.slash>0)return;
-  setTool('sword'); player.cd.slash=player.cdMax.slash; player.swing=player.swingDur; sfx('swing');
+  setTool('sword'); player.cd.slash=player.cdMax.slash; player.swing=player.swingDur; sfx('swing'); heroAct('slash',{upper:true,speed:3.4});
   slashFx.position.set(player.x,player.y+.9,player.z); slashFx.rotation.z=player.rot-Math.PI/2; slashFx.material.opacity=.7;
   const fx=Math.sin(player.rot),fz=Math.cos(player.rot);
   for(const sk of SKELS){if(!sk.alive)continue;const dx=sk.x-player.x,dz=sk.z-player.z,d=Math.hypot(dx,dz);if(d<2.7&&(dx*fx+dz*fz)/(d||1)>.25)damageSkel(sk,randi(16,22),dx/(d||1),dz/(d||1));}
 }
 function doFire(){
   if(!canAct()||player.cd.fire>0)return;
-  player.cd.fire=player.cdMax.fire; sfx('fire'); player.swing=player.swingDur;
+  player.cd.fire=player.cdMax.fire; sfx('fire'); player.swing=player.swingDur; heroAct('cast',{upper:true,speed:3.2});
   for(let i=0;i<36;i++){const a=i/36*TAU;puff({x:player.x+Math.cos(a)*.6,y:player.y+.4,z:player.z+Math.sin(a)*.6,vx:Math.cos(a)*7,vy:rand(.5,2),vz:Math.sin(a)*7,color:i%2?'#ff7a1a':'#ffc04a',size:.9,grow:.6,life:.55});}
   ring(player.x,player.z,'#ff8a2a');
   for(const sk of SKELS){if(!sk.alive)continue;const dx=sk.x-player.x,dz=sk.z-player.z,d=Math.hypot(dx,dz);if(d<4.6)damageSkel(sk,randi(26,34),dx/(d||1),dz/(d||1),'#ffb04a');}
@@ -1719,7 +1784,7 @@ function doBolt(){
   if(!canAct()||player.cd.bolt>0)return;
   let tgt=null,best=15;for(const sk of SKELS){if(!sk.alive)continue;const d=Math.hypot(sk.x-player.x,sk.z-player.z);if(d<best){best=d;tgt=sk;}}
   if(!tgt){toast('No enemies in range');sfx('error');return;}
-  player.cd.bolt=player.cdMax.bolt; sfx('magic'); player.swing=player.swingDur;
+  player.cd.bolt=player.cdMax.bolt; sfx('magic'); player.swing=player.swingDur; heroAct('cast',{upper:true,speed:3.6});
   const m=glow('#b07bff',1.4,scene,player.x,player.y+1.2,player.z,1); const core=glow('#ffffff',.5,m,0,0,0,1);
   BOLTS.push({m,x:player.x,y:player.y+1.2,z:player.z,t:tgt,life:2});
 }
@@ -1742,7 +1807,7 @@ function usePlot(p){
   if(p.state==='ripe'){
     const n=Math.random()<.3?2:1; p.state='empty'; p.t=0;
     if(p.wild){p.state='growing';p.dur=p.t=90;}
-    give('pumpkin',n,false,{x:p.x,y:1.6,z:p.z}); S.stats.pumpkins+=n; sfx('pick');
+    give('pumpkin',n,false,{x:p.x,y:1.6,z:p.z}); S.stats.pumpkins+=n; sfx('pick'); faceTo(p.x,p.z); heroAct('lift',{speed:2.4});
     burst(p.x,1,p.z,'#ffb04a',10,2,.3,.6); for(let i=0;i<6;i++)puff({x:p.x,y:.9,z:p.z,vx:rand(-2,2),vy:rand(2,4),vz:rand(-2,2),grav:-8,color:'#6a9a3a',size:.25,life:.8});
     player.swing=player.swingDur; updatePlotVisual(p); updateTracker();
     if(n===2)toast('Double harvest!','pumpkin');
@@ -1760,7 +1825,7 @@ function updatePlots(dt){
 let mineCD=0;
 function mineNode(n){
   if(mineCD>0||!n.alive)return;
-  setTool('pick'); player.swing=player.swingDur; mineCD=.42; faceTo(n.x,n.z);
+  setTool('pick'); player.swing=player.swingDur; mineCD=.42; faceTo(n.x,n.z); heroAct('dig',{speed:2.4});
   setTimeout(()=>{
     if(!n.alive)return;
     n.hp-=S.pick==='basic'?2:1; n.shake=.25; sfx('clink');
@@ -1787,7 +1852,7 @@ function startFishing(spot){
   setTool('rod'); faceTo(spot.wx,spot.wz);
   const bait=inv('bait')>0; if(bait)take('bait',1);
   fish={spot,phase:'cast',t:0,bait,wait:bait?rand(1.2,2.6):rand(2.4,5.2)};
-  bobber.visible=true; fishLine.visible=true; sfx('swing');
+  bobber.visible=true; fishLine.visible=true; sfx('swing'); heroAct('cast',{upper:true,speed:1.6,holdAt:1.1});
   showFishUI(`<div class="t">Waiting for a bite${bait?' (bait used)':''}…</div><div class="muted" style="font-size:13px">Move to stop fishing</div>`);
 }
 function rollFish(table,bait){const list=FISH_TABLES[table].map(([id,w])=>[id,bait&&['eel','ghostcarp','koi'].includes(id)?w*2.2:w]);let tot=list.reduce((a,b)=>a+b[1],0),r=Math.random()*tot;for(const [id,w] of list){if((r-=w)<=0)return id;}return list[0][0];}
@@ -1803,7 +1868,7 @@ function fishPress(){
   if(fish.phase==='wait'||fish.phase==='cast'){return true;}
   return true;
 }
-function cancelFishing(){if(!fish)return;fish=null;bobber.visible=false;fishLine.visible=false;$('#fishui').hidden=true;setTool('sword');}
+function cancelFishing(){if(!fish)return;fish=null;heroStop();bobber.visible=false;fishLine.visible=false;$('#fishui').hidden=true;setTool('sword');}
 function showFishUI(h){const el=$('#fishui');el.innerHTML=h;el.hidden=false;}
 const _tip=new THREE.Vector3();
 function updateFishing(dt){
@@ -1851,7 +1916,7 @@ function questProgress(q){
 }
 function questReady(q){return questProgress(q).every(p=>p.have>=p.need);}
 function makeOddJob(){
-  const opts=[{bone:3},{pumpkin:4},{amethyst:2},{moonfish:2},{stone:10},{perch:1},{ghostcarp:1},{eel:1}];
+  const opts=[{bone:3},{wood:6},{pumpkin:4},{amethyst:2},{moonfish:2},{stone:10},{perch:1},{ghostcarp:1},{eel:1}];
   const need=opts[randi(0,opts.length-1)];
   const val=Object.entries(need).reduce((a,[k,v])=>a+(ITEMS[k].sell||10)*v,0);
   const k=Object.keys(need)[0];
@@ -1870,7 +1935,7 @@ function talkPete(){
       if(q.need)pay(q.need);
       if(q.needFish){let left=q.needFish;for(const k of Object.keys(ITEMS).filter(k=>ITEMS[k].fish).sort((a,b)=>ITEMS[a].sell-ITEMS[b].sell)){while(left>0&&inv(k)>0){take(k,1);left--;}}}
       grantAll(q.reward,{x:player.x,y:2.4,z:player.z});
-      sfx('quest');toast('Quest complete: '+q.title,'coin');
+      sfx('quest');toast('Quest complete: '+q.title,'coin'); heroAct('victory',{speed:1.3});
       S.qActive=false; if(S.qi<QUESTS.length)S.qi++; else {S.oddDone++;S.odd=null;}
       updateTracker(); save(); closeModal();
       setTimeout(()=>{if(mode==='play'&&!modalOpen&&Math.hypot(player.x-P.pete.x,player.z-P.pete.z)<4)talkPete();},450);
@@ -2103,6 +2168,7 @@ function openHow(fromPause){
     <kbd class="k">WASD</kbd><span>Move (arrow keys work too). Hold <b>Shift</b> to run.</span>
     <kbd class="k">E</kbd><span>Talk, shop, harvest, mine, fish, open chests and read signposts.</span>
     <kbd class="k">J</kbd><span>Sword slash (also <b>Space</b>). Hits skeletons in front of you.</span>
+    <kbd class="k">Tree</kbd><span>Walk up to a tree and press E (or USE) to chop it for wood. It grows back in two minutes.</span>
     <kbd class="k">K</kbd><span>Fire burst. Burns everything around you. 6s cooldown.</span>
     <kbd class="k">L</kbd><span>Spirit bolt. Homes in on the nearest skeleton.</span>
     <kbd class="k">I</kbd><span>Bag</span><kbd class="k">Q</kbd><span>Quest log</span><kbd class="k">B</kbd><span>Build &amp; decorate (at home)</span>
@@ -2256,7 +2322,7 @@ function updatePlayer(dt){
   }
   const len=Math.hypot(ix,iz);
   if(fish&&len>.2&&fish.phase!=='done')cancelFishing();
-  const run=keys.shift||Math.hypot(joy.x,joy.z)>.92;
+  const run=keys.shift||Math.hypot(joy.x,joy.z)>.92; player.running=run;
   const spd=(run?8.6:5.4)*(player.swing>0?.55:1);
   if(len>.15){ix/=Math.max(1,len);iz/=Math.max(1,len);tryMove(player.x+ix*spd*dt,player.z+iz*spd*dt);player.rot=angLerp(player.rot,Math.atan2(ix,iz),dt*12);player.walkT+=dt*spd*1.55;player.moving=Math.min(1,player.moving+dt*6);}
   else player.moving=Math.max(0,player.moving-dt*6);
@@ -2273,8 +2339,7 @@ function updatePlayer(dt){
   mineCD=Math.max(0,mineCD-dt);
   if(clock-player.lastHit>6&&S.hp<S.maxHp){S.hp=Math.min(S.maxHp,S.hp+dt*3);hpDirty=true;}
   playerLight.position.set(player.x,player.y+2.4,player.z+.6);
-  if(player.model.userData.pose)player.model.userData.pose();
-  if(player.tool==='pick'&&player.swing<=0&&mineCD<=0&&!nearest)setTool('sword');
+  if((player.tool==='pick'||player.tool==='axe')&&player.swing<=0&&mineCD<=0&&chopCD<=0&&!nearest)setTool('sword');
 }
 let hpDirty=false, discT=0;
 function updateRegions(dt){
@@ -2403,12 +2468,13 @@ function loop(now){
   if(peteObj){peteObj.userData.P.body.position.y=Math.sin(clock*1.6)*.03;peteObj.userData.P.head.rotation.z=Math.sin(clock*.8)*.12;peteObj.userData.P.armR.rotation.z=Math.sin(clock*1.3)*.15;}
   if(hazelObj){hazelObj.userData.P.body.position.y=Math.sin(clock*1.8+1)*.03;hazelObj.userData.P.head.rotation.y=Math.sin(clock*.6)*.4;hazelObj.userData.P.armL.rotation.x=-.4+Math.sin(clock*2)*.2;}
   if(mode==='title'||mode==='titlehow'){titleA+=dt*.05;const r=52;camera.position.set(Math.cos(titleA)*r,28,Math.sin(titleA)*r);camera.lookAt(0,0,0);moon.position.set(-22,48,-30);moon.target.position.set(0,0,0);}
-  else if(mode==='create'){if(cChar){cRot+=drag===null?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;if(cChar.userData.pose)cChar.userData.pose();}
+  else if(mode==='create'){if(cChar){cRot+=drag===null?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;if(cChar.userData.anim)cChar.userData.anim(dt,{});}
     const narrow=innerWidth<760;cCam.position.set(0,1.5,narrow?6.4:5.6);cCam.lookAt(0,1.0,0);}
   else if(mode==='play'){
     if(!modalOpen&&!portrait){updatePlayer(dt);updateSkels(dt);updateCombatFx(dt);updateFishing(dt);updatePlacing();}
     else{updateCombatFx(dt);}
-    updatePlots(dt); updateNodes(dt);
+    updatePlots(dt); updateNodes(dt); updateTrees(dt);
+    if(player.model&&player.model.userData.anim)player.model.userData.anim(dt,{move:(modalOpen||portrait||player.dead)?0:player.moving,run:player.running&&player.moving>.5});
     findNearest(); updatePrompt(); updateCamera(dt); drawMini(dt); updateRegions(dt); updateCooldowns();
     if(hpDirty){hpDirty=false;$('#hpBar').style.width=(S.hp/S.maxHp*100)+'%';$('#hpTxt').textContent=`${Math.ceil(S.hp)} / ${S.maxHp}`;}
     saveT+=dt; if(saveT>15){saveT=0;save();}
