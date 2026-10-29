@@ -51,6 +51,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--glow);outline-o
 .icon{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 3px #000a)}
 
 /* ---------- title ---------- */
+#title .musicbtn{position:absolute;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));pointer-events:auto;background:#1b1633cc;color:var(--text);border:1px solid #ffffff22;border-radius:999px;padding:8px 14px;font:800 13px var(--f-body);cursor:pointer}
 #title{display:flex;flex-direction:column;justify-content:flex-start;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));gap:20px;background:radial-gradient(ellipse at 20% 30%,#0000 0,#0a081a88 70%)}
 .logo{line-height:.85;margin:0}
 .logo .h{font-family:var(--f-logo);font-weight:800;font-size:clamp(64px,12vw,136px);letter-spacing:.01em;background:linear-gradient(180deg,#ffe08a 0%,#ff9a2e 45%,#b44a10 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #3a1505) drop-shadow(0 0 22px #ff8a2a88);display:flex;align-items:center}
@@ -266,6 +267,7 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
     <button id="bInstall" hidden>Install App<small id="installInfo">Play full screen from your home screen</small></button>
   </nav>
   <p class="tag">Explore · Quest · Fish · Mine · Gather · Fight · Shop · Build &amp; Decorate</p>
+  <button id="bMusic" class="musicbtn" aria-label="Music">♪ <span id="musicLbl">Tap for music</span></button>
 </div>
 
 <!-- Character creation -->
@@ -1614,11 +1616,11 @@ let AC=null, noiseBuf=null, muted=false;
 function sfx(type){
   if(muted)return;
   try{
-    if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();noiseBuf=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    ensureAC();
     if(AC.state==='suspended')AC.resume();
     const t=AC.currentTime;
-    const tone=(f,f2,dur,typ='sine',vol=.15,delay=0)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=typ;o.frequency.setValueAtTime(f,t+delay);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+delay+dur);g.gain.setValueAtTime(vol,t+delay);g.gain.exponentialRampToValueAtTime(.001,t+delay+dur);o.connect(g).connect(AC.destination);o.start(t+delay);o.stop(t+delay+dur+.02);};
-    const noise=(dur,vol=.2,freq=1200)=>{const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f).connect(g).connect(AC.destination);s.start(t);s.stop(t+dur);};
+    const tone=(f,f2,dur,typ='sine',vol=.15,delay=0)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=typ;o.frequency.setValueAtTime(f,t+delay);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+delay+dur);g.gain.setValueAtTime(vol,t+delay);g.gain.exponentialRampToValueAtTime(.001,t+delay+dur);o.connect(g).connect(OUT);o.start(t+delay);o.stop(t+delay+dur+.02);};
+    const noise=(dur,vol=.2,freq=1200)=>{const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f).connect(g).connect(OUT);s.start(t);s.stop(t+dur);};
     switch(type){
       case 'coin':tone(988,0,.08,'square',.06);tone(1318,0,.18,'square',.06,.07);break;
       case 'pick':tone(660,880,.12,'triangle',.12);break;
@@ -1639,6 +1641,151 @@ function sfx(type){
       case 'build':noise(.12,.2,500);tone(330,0,.1,'square',.06,.08);break;
     }
   }catch(e){}
+}
+
+/* ---------- Music and ambience (all made live with Web Audio, no files) ---------- */
+let OUT=null, MUS_BUS=null, AMB_BUS=null, REVERB=null, musicOn=true;
+try{const a=JSON.parse(localStorage.getItem('hallows-audio')||'{}');muted=!!a.muted;if(a.music===false)musicOn=false;}catch(e){}
+function saveAudioPrefs(){try{localStorage.setItem('hallows-audio',JSON.stringify({muted,music:musicOn}));}catch(e){}}
+function ensureAC(){
+  if(AC)return AC;
+  AC=new(window.AudioContext||window.webkitAudioContext)();
+  noiseBuf=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate);{const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  OUT=AC.createGain(); OUT.gain.value=muted?0:1; OUT.connect(AC.destination);
+  // a small hall: decaying noise as the impulse
+  REVERB=AC.createConvolver(); const len=AC.sampleRate*2.6, ir=AC.createBuffer(2,len,AC.sampleRate);
+  for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}
+  REVERB.buffer=ir; const wet=AC.createGain(); wet.gain.value=.5; REVERB.connect(wet).connect(OUT);
+  MUS_BUS=AC.createGain(); MUS_BUS.gain.value=0; MUS_BUS.connect(OUT); MUS_BUS.connect(REVERB);
+  AMB_BUS=AC.createGain(); AMB_BUS.gain.value=0; AMB_BUS.connect(OUT);
+  return AC;
+}
+function setMuted(m){muted=m;saveAudioPrefs();if(OUT)OUT.gain.setTargetAtTime(m?0:1,AC.currentTime,.05);}
+function unlockAudio(){try{ensureAC();if(AC.state==='suspended'&&!document.hidden)AC.resume();}catch(e){}}
+addEventListener('pointerdown',unlockAudio,true); addEventListener('keydown',unlockAudio,true);
+document.addEventListener('visibilitychange',()=>{if(!AC)return;try{document.hidden?AC.suspend():AC.resume();}catch(e){}});
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const pan=(node,p)=>{if(!AC.createStereoPanner)return node;const s=AC.createStereoPanner();s.pan.value=p;node.connect(s);return s;};
+
+/* --- the title theme: a music-box waltz in D minor, with an organ, a pizzicato bass, a theremin and a church bell --- */
+const SONG={
+  beat:60/108,
+  // one chord per bar, as midi notes (root first)
+  chords:[[50,53,57],[50,53,57],[46,50,53],[45,49,52],[50,53,57],[43,46,50],[45,49,55],[45,49,55],
+          [43,46,50],[50,53,57],[46,50,53],[45,49,52],[50,53,57],[43,46,50],[45,49,55],[50,53,57]],
+  // melody per bar: [beat, note, length in beats]
+  mel:[[[0,69,1],[1,74,1],[2,77,1]],[[0,76,1.5],[1.5,74,.5],[2,73,1]],[[0,74,1],[1,70,1],[2,74,1]],[[0,73,2],[2,76,1]],
+       [[0,81,1],[1,77,1],[2,74,1]],[[0,79,1.5],[1.5,77,.5],[2,76,1]],[[0,76,1],[1,79,1],[2,73,1]],[[0,69,3]],
+       [[0,70,1],[1,74,1],[2,79,1]],[[0,77,1.5],[1.5,76,.5],[2,74,1]],[[0,77,1],[1,74,1],[2,70,1]],[[0,73,1],[1,76,1],[2,81,1]],
+       [[0,81,.5],[.5,79,.5],[1,77,.5],[1.5,76,.5],[2,74,1]],[[0,79,1],[1,70,1],[2,74,1]],[[0,76,1],[1,73,1],[2,69,1]],[[0,74,3]]],
+  // theremin: a slow line over the second half, [bar, note, bars]
+  ghost:[[8,67,2],[10,65,2],[12,69,2],[14,73,1],[15,74,1]],
+};
+const MUS={want:false,next:0,bar:0,loops:0};
+function mBox(t,m,d,v=.11){ // music box: bright sine with a glassy overtone, quick fade
+  const o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),g2=AC.createGain();
+  o.frequency.value=mtof(m); o2.frequency.value=mtof(m)*4.01; o.type='sine'; o2.type='sine';
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.0008,t+Math.max(.9,d*1.4));
+  g2.gain.setValueAtTime(v*.18,t); g2.gain.exponentialRampToValueAtTime(.0005,t+.25);
+  o.connect(g).connect(MUS_BUS); o2.connect(g2).connect(MUS_BUS);
+  o.start(t); o2.start(t); o.stop(t+d*1.4+1); o2.stop(t+.3);
+}
+function mPluck(t,m,v=.12){
+  const o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter(); o.type='triangle'; o.frequency.value=mtof(m);
+  f.type='lowpass'; f.frequency.setValueAtTime(1400,t); f.frequency.exponentialRampToValueAtTime(260,t+.35);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.008); g.gain.exponentialRampToValueAtTime(.0008,t+.5);
+  o.connect(f).connect(g).connect(MUS_BUS); o.start(t); o.stop(t+.55);
+}
+function mOrgan(t,notes,d){
+  const g=AC.createGain(),f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=760; f.Q.value=.4;
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.022,t+.5); g.gain.setValueAtTime(.022,t+d-.4); g.gain.linearRampToValueAtTime(0,t+d+.2);
+  g.connect(MUS_BUS); f.connect(g);
+  for(const m of notes)for(const det of [-6,6]){const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=mtof(m+12);o.detune.value=det;o.connect(f);o.start(t);o.stop(t+d+.3);}
+}
+function mBell(t,m,v=.09){ // a far-off church bell: inharmonic partials and a long tail
+  for(const [r,a,dec] of [[1,1,4],[2,.55,3],[2.76,.4,2.2],[5.4,.22,1.2],[.5,.35,5]]){
+    const o=AC.createOscillator(),g=AC.createGain(); o.frequency.value=mtof(m)*r;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v*a,t+.01); g.gain.exponentialRampToValueAtTime(.0005,t+dec);
+    o.connect(g).connect(MUS_BUS); o.start(t); o.stop(t+dec+.1);
+  }
+}
+function mGhost(t,m,d,prev){ // theremin: a sine that slides into each note and wavers
+  const o=AC.createOscillator(),g=AC.createGain(),lfo=AC.createOscillator(),lg=AC.createGain();
+  o.frequency.setValueAtTime(mtof(prev||m-2),t); o.frequency.exponentialRampToValueAtTime(mtof(m),t+.45);
+  lfo.frequency.value=5.2; lg.gain.value=mtof(m)*.012; lfo.connect(lg).connect(o.frequency);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.05,t+.4); g.gain.setValueAtTime(.05,t+d-.5); g.gain.linearRampToValueAtTime(0,t+d);
+  o.connect(g).connect(MUS_BUS); o.start(t); lfo.start(t); o.stop(t+d+.05); lfo.stop(t+d+.05);
+}
+function scheduleMusic(){
+  const B=SONG.beat, bar=B*3;
+  while(MUS.next<AC.currentTime+.6){
+    const t=MUS.next, i=MUS.bar, ch=SONG.chords[i];
+    if(i===0)mBell(t,38,MUS.loops?.07:.1);
+    mPluck(t,ch[0]-12,.14); mPluck(t+B,ch[1],.05); mPluck(t+B*2,ch[2],.05);
+    mOrgan(t,ch,bar);
+    for(const [b,m,d] of SONG.mel[i])mBox(t+b*B,m+(MUS.loops%2&&i<8?12:0),d*B,MUS.loops%2&&i<8?.07:.1);
+    for(let k=0;k<SONG.ghost.length;k++){const [gb,gm,gd]=SONG.ghost[k];if(gb===i)mGhost(t,gm,gd*bar,k?SONG.ghost[k-1][1]:null);}
+    MUS.next+=bar; MUS.bar=(i+1)%SONG.chords.length; if(!MUS.bar)MUS.loops++;
+  }
+}
+
+/* --- the island at night: wind, waves, a waterfall, the campfire, crickets, an owl, graveyard moans and cave drips --- */
+let AMB=null;
+function loopNoise(sec=3){const b=AC.createBuffer(1,AC.sampleRate*sec,AC.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){const w=Math.random()*2-1;last=(last+.02*w)/1.02;d[i]=w*.6+last*3;}const s=AC.createBufferSource();s.buffer=b;s.loop=true;return s;}
+function bed(type,freq,q){const s=loopNoise(),f=AC.createBiquadFilter(),g=AC.createGain();f.type=type;f.frequency.value=freq;f.Q.value=q||.7;g.gain.value=0;s.connect(f).connect(g).connect(AMB_BUS);s.start();return {g,f};}
+function makeAmbience(){
+  AMB={wind:bed('bandpass',420,.5),waves:bed('lowpass',480,.6),falls:bed('bandpass',1300,.35),fire:bed('lowpass',320,.5),
+    drone:(()=>{const g=AC.createGain();g.gain.value=0;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=220;f.connect(g).connect(AMB_BUS);for(const fr of [55,55.6,82.4]){const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=fr;o.connect(f);o.start();}return {g};})(),
+    t:0,cricket:1,owl:12+Math.random()*10,crackle:0,moan:8,drip:1,caw:20,gust:0};
+}
+function ambEvent(fn){try{fn(AC.currentTime+.02);}catch(e){}}
+function chirp(t,p){const v=.018+Math.random()*.012,f=4300+Math.random()*900,n=2+(Math.random()*3|0);for(let k=0;k<n;k++){const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;const s=t+k*.055;g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(v,s+.008);g.gain.exponentialRampToValueAtTime(.0005,s+.04);o.connect(g);pan(g,p).connect(AMB_BUS);o.start(s);o.stop(s+.05);}}
+function hoot(t,p){[[0,.38],[.55,.22],[.8,.5]].forEach(([d,len])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(400,t+d);o.frequency.exponentialRampToValueAtTime(340,t+d+len);g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.035,t+d+.06);g.gain.exponentialRampToValueAtTime(.0005,t+d+len);o.connect(g);const pn=pan(g,p);pn.connect(AMB_BUS);pn.connect(REVERB);o.start(t+d);o.stop(t+d+len+.05);});}
+function pop(t,v){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;f.type='highpass';f.frequency.value=1800+Math.random()*2500;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+.03+Math.random()*.04);s.connect(f).connect(g).connect(AMB_BUS);s.start(t,Math.random()*.4);s.stop(t+.08);}
+function moan(t,v,p){const o=AC.createOscillator(),g=AC.createGain(),l=AC.createOscillator(),lg=AC.createGain(),f0=240+Math.random()*120;o.frequency.setValueAtTime(f0,t);o.frequency.linearRampToValueAtTime(f0*1.35,t+1.6);o.frequency.linearRampToValueAtTime(f0*.8,t+3.4);l.frequency.value=4.5;lg.gain.value=6;l.connect(lg).connect(o.frequency);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+1.2);g.gain.linearRampToValueAtTime(0,t+3.4);o.connect(g);const pn=pan(g,p);pn.connect(AMB_BUS);pn.connect(REVERB);o.start(t);l.start(t);o.stop(t+3.5);l.stop(t+3.5);}
+function caw(t,v,p){[0,.32].forEach(d=>{const o=AC.createOscillator(),f=AC.createBiquadFilter(),g=AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(980,t+d);o.frequency.exponentialRampToValueAtTime(620,t+d+.22);f.type='bandpass';f.frequency.value=1300;f.Q.value=2.5;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(v,t+d+.03);g.gain.exponentialRampToValueAtTime(.0005,t+d+.24);o.connect(f).connect(g);pan(g,p).connect(AMB_BUS);o.start(t+d);o.stop(t+d+.26);});}
+function drip(t,v,p){const o=AC.createOscillator(),g=AC.createGain(),f=1100+Math.random()*900;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*.55,t+.09);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+.12);o.connect(g);const pn=pan(g,p);pn.connect(AMB_BUS);pn.connect(REVERB);o.start(t);o.stop(t+.14);}
+const near=(pt,r)=>Math.max(0,1-Math.hypot(player.x-pt.x,player.z-pt.z)/r);
+const side=pt=>Math.max(-.8,Math.min(.8,(pt.x-player.x)/12));
+function updateAmbience(dt,level){
+  const A=AMB, now=AC.currentTime, tc=.6, inside=S&&S.inside;
+  A.t+=dt;
+  const out=mode==='play'&&!inside;
+  // what is nearby
+  const shore=out?Math.max(0,1-(R(Math.atan2(player.z,player.x))-Math.hypot(player.x,player.z))/16):0;
+  const falls=out?near(P.falls,22):0, fire=mode==='play'?(inside?.55:near({x:0,z:0},11)):0;
+  const grave=out?near(P.graveyard,24):0, cave=out?near(P.cave,20):0;
+  A.gust-=dt; if(A.gust<=0){A.gust=2+Math.random()*4;A.windT=.5+Math.random()*.7;A.wind.f.frequency.setTargetAtTime(300+Math.random()*350,now,1.5);}
+  const title=mode!=='play';
+  A.wind.g.gain.setTargetAtTime(level*(inside?.015:title?.03:.06)*(A.windT||.8),now,1.2);
+  A.waves.g.gain.setTargetAtTime(level*(title?.025:shore*.17)*(.55+.45*Math.sin(A.t*.55)),now,.4);
+  A.falls.g.gain.setTargetAtTime(level*falls*falls*.16,now,tc);
+  A.fire.g.gain.setTargetAtTime(level*fire*.07,now,tc);
+  A.drone.g.gain.setTargetAtTime(level*grave*.028,now,tc);
+  if(level<.05)return;
+  // little events
+  const quietOut=out&&shore<.7&&falls<.5;
+  if(quietOut||title){A.cricket-=dt;if(A.cricket<=0){A.cricket=.25+Math.random()*.9;ambEvent(t=>chirp(t,Math.random()*1.6-.8));}}
+  if(out||title){A.owl-=dt;if(A.owl<=0){A.owl=22+Math.random()*30;ambEvent(t=>hoot(t,Math.random()*1.4-.7));}}
+  if(fire>.05){A.crackle-=dt;if(A.crackle<=0){A.crackle=.04+Math.random()*.25;ambEvent(t=>pop(t,(.05+Math.random()*.08)*fire));}}
+  if(grave>.1){A.moan-=dt;if(A.moan<=0){A.moan=7+Math.random()*9;ambEvent(t=>moan(t,.035*grave,side(P.graveyard)));}
+    A.caw-=dt;if(A.caw<=0){A.caw=10+Math.random()*14;ambEvent(t=>caw(t,.05*grave,side(P.graveyard)+Math.random()*.4-.2));}}
+  if(cave>.1){A.drip-=dt;if(A.drip<=0){A.drip=.6+Math.random()*1.8;ambEvent(t=>drip(t,.06*cave,side(P.cave)));}}
+}
+function musicLabel(){const l=$('#musicLbl');if(l)l.textContent=muted?'Sound off':!MUS.heard?'Tap for music':musicOn?'Music on':'Music off';}
+$('#bMusic').onclick=e=>{e.stopPropagation();unlockAudio();if(muted)setMuted(false);if(!MUS.heard){musicOn=true;MUS.heard=true;}else musicOn=!musicOn;saveAudioPrefs();musicLabel();sfx('ui');};
+function updateAudio(dt){
+  if(!AC||AC.state!=='running')return;
+  const menu=mode==='title'||mode==='titlehow'||mode==='create';
+  const want=menu&&musicOn;
+  if(want&&!MUS.want){MUS.next=Math.max(MUS.next,AC.currentTime+.1);}
+  if(!want&&MUS.want){MUS.bar=0;MUS.loops=0;}
+  MUS.want=want;
+  MUS_BUS.gain.setTargetAtTime(want?.9:0,AC.currentTime,want?.6:.4);
+  if(want){scheduleMusic();if(!MUS.heard){MUS.heard=true;musicLabel();}} else MUS.next=0;
+  if(!AMB)makeAmbience();
+  AMB_BUS.gain.setTargetAtTime(menu?.6:1,AC.currentTime,.8);
+  updateAmbience(dt,menu?(musicOn?.5:1):1);
 }
 
 /* =================================================================
@@ -2287,6 +2434,7 @@ function openPause(confirmReset=false){
     <button class="btn" id="pLook">Change appearance</button>
     <button class="btn" id="pHow">How to play</button>
     <button class="btn" id="pSound">Sound: ${muted?'Off':'On'}</button>
+    <button class="btn" id="pMusic">Menu music: ${musicOn?'On':'Off'}</button>
     ${canFullscreen()?`<button class="btn" id="pFull">${document.fullscreenElement?'Exit full screen':'Full screen'}</button>`:''}
     <button class="btn" id="pTitle">Save and return to title</button>
     ${confirmReset?`<div class="confirm"><span style="flex:1;min-width:180px">Erase your saved island and start over? This can’t be undone.</span><button class="btn" id="pNo">Keep playing</button><button class="btn primary" id="pYes">Erase and restart</button></div>`:`<button class="btn" id="pReset">Start over…</button>`}
@@ -2295,7 +2443,8 @@ function openPause(confirmReset=false){
   $('#pResume').onclick=closeModal; $('#pSave').onclick=()=>{save(false);};
   $('#pLook').onclick=()=>{closeModal();openCreate(true);};
   $('#pHow').onclick=()=>openHow(true);
-  $('#pSound').onclick=()=>{muted=!muted;openPause();};
+  $('#pSound').onclick=()=>{setMuted(!muted);openPause();};
+  $('#pMusic').onclick=()=>{musicOn=!musicOn;saveAudioPrefs();openPause();};
   const pf=$('#pFull'); if(pf)pf.onclick=()=>{toggleFullscreen();setTimeout(()=>openPause(),250);};
   $('#pTitle').onclick=()=>{save();closeModal();toTitle();};
   if(confirmReset){$('#pNo').onclick=()=>openPause();$('#pYes').onclick=()=>{try{localStorage.removeItem(SAVE_KEY);}catch(e){}location.reload();};}
@@ -2630,6 +2779,7 @@ function loop(now){
     S.t+=dt;
   }
   updateFloaters(dt);
+  try{updateAudio(dt);}catch(e){}
   render();
   requestAnimationFrame(loop);
 }
