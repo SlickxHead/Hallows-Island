@@ -814,6 +814,8 @@ function buildHero(L){
   const base={idle:loopA('idle'),walk:loopA('walk'),run:loopA('run')}; base.idle.setEffectiveWeight(1);
   base.walk.timeScale=2.0; base.run.timeScale=1.9;
   let one=null, runW=0;
+  // Tripo's animations keep the model's palms-forward hands; turn the forearms so the palms face the legs
+  const armFix=[['L_Forearm',1.4],['R_Forearm',-1.4]].map(([n,a])=>{const b=bones[n];if(!b)return null;const c=b.children.find(o=>o.isBone);const ax=c?c.position.clone().normalize():new THREE.Vector3(0,1,0);return {b,rest:b.quaternion.clone(),q:new THREE.Quaternion().setFromAxisAngle(ax,a)};}).filter(Boolean);
   const OVER=12; // action weight: overrides the loops on the bones it animates
   const act=(name,o)=>{
     const clip=(o.upper?HERO.upper:HERO.clips)[name]; if(!clip)return;
@@ -834,7 +836,9 @@ function buildHero(L){
       one.a.setEffectiveWeight(w);
       if(!holding&&one.t>=one.dur){one.a.stop();one=null;}
     }
+    for(const f of armFix)f.b.quaternion.copy(f.rest);
     mixer.update(dt);
+    for(const f of armFix)f.b.quaternion.multiply(f.q);
   };
   anim(0,{}); g.updateMatrixWorld(true);
   // hat, built in the model's own space then handed to the head bone
