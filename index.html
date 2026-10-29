@@ -98,6 +98,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--glow);outline-o
 #tracker{cursor:pointer}
 #tracker .tq.sub{margin-top:6px;padding-top:5px;border-top:1px solid #7a553044;opacity:.75}
 #tracker .navd{margin-top:3px;font-weight:800;color:#8a4a12;font-size:12px}
+#tracker .gtip{margin-top:5px;padding-top:4px;border-top:1px dashed #7a553066;font-size:12px;font-weight:700;color:#5a3410}
+.guide{outline:3px solid #ffb347!important;outline-offset:2px;animation:gpulse 1.1s ease-in-out infinite}
+@keyframes gpulse{50%{outline-color:#ffb34722;box-shadow:0 0 18px 6px #ffb34777}}
+#guideBub{position:fixed;z-index:58;background:linear-gradient(180deg,var(--parchment),var(--parchment-2));color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700;line-height:1.35;box-shadow:0 6px 18px #000a;pointer-events:none;border:2px solid #ffb347}
 #tracker .tswap{margin-top:4px;font-size:11px;opacity:.6}
 .tr{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 #mini{width:150px;height:150px;border-radius:50%;border:3px solid var(--wood-edge);box-shadow:0 0 0 2px #0009,0 8px 20px #0009;background:#0d1a33}
@@ -257,6 +261,7 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="guideBub" hidden></div>
 
 <!-- Title -->
 <div id="title" class="ui">
@@ -489,11 +494,11 @@ const FISH_TABLES={
 const FISH_DIFF={moonfish:[.34,1.7],perch:[.28,2.0],ghostcarp:[.25,2.2],eel:[.22,2.5],koi:[.16,2.9]};
 const QUESTS=[
   {id:'bones',giver:'wick',title:'Restless Graveyard',text:'The graveyard has been getting restless lately. Could you clear out the skeletons and bring back 3 old bones?',need:{bone:3},reward:{coin:500,pumpkin:1,amethyst:1},hint:'Skeletons roam the Whispering Graveyard, north of the village. Press J or Space to swing your sword.'},
-  {id:'light',giver:'wick',title:"The Keeper's Light",text:"I kept the old lighthouse for forty years, but my knees won't manage those stairs any more. Would you climb up and check that the lamp still burns?",flag:'lighthouse',reward:{coin:300,bait:3},hint:'Follow the lantern path east to the Old Lighthouse and step inside.'},
+  {id:'light',giver:'wick',title:"The Keeper's Light",text:"I kept the old lighthouse for forty years, but my knees won't manage those stairs any more. Would you climb up and check that the lamp still burns?",flag:'lighthouse',reward:{coin:300,bait:3},hint:'Follow the lantern path east to the Old Lighthouse. Walk up to its door and press E (or USE) to climb.'},
   {id:'fish',giver:'pete',title:'Supper by Moonlight',text:"I'm hosting a moonlit supper and I'm short on fish. Catch 2 of any kind for me?",needFish:2,reward:{coin:350,seeds:3},hint:'Fish from the end of the dock on Moonlit Beach. Press E to cast, then again when you see the bite.'},
   {id:'pumpkins',giver:'pete',title:'Patch Work',text:'Harvest season waits for no one. Bring me 5 pumpkins from the patch, would you?',need:{pumpkin:5},reward:{coin:400,lantern:1},hint:'The Pumpkin Patch is southwest of the village. Ripe pumpkins glow a little.'},
-  {id:'gems',giver:'wick',title:'Glimmer in the Dark',text:'In my day we polished the lighthouse lens with Glimmer Cave amethyst. Bring me 3 and I will pay you in something useful.',need:{amethyst:3},reward:{coin:600,kit:1},hint:'Glimmer Cave is northwest. Swing at the crystal rocks out front with E.'},
-  {id:'house',giver:'pete',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells upgrade kits, and Keeper Wick has been known to hand them out too.',flag:'house2',reward:{coin:800,moonstone:1},hint:'Open Build (B) near your house. The House tab shows what the upgrade needs. Chop trees for the wood.'},
+  {id:'gems',giver:'wick',title:'Glimmer in the Dark',text:'In my day we polished the lighthouse lens with Glimmer Cave amethyst. Bring me 3 and I will pay you in something useful.',need:{amethyst:3},reward:{coin:600,kit:1},hint:'Glimmer Cave is northwest. Walk up to the glowing crystal rocks out front and press E (or USE) to mine them. Amethyst drops now and then.'},
+  {id:'house',giver:'pete',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells upgrade kits, and Keeper Wick has been known to hand them out too.',flag:'house2',reward:{coin:800,moonstone:1},hint:'You need an Upgrade Kit (Hazel sells them, and Keeper Wick gives one for his amethyst job), 10 stone from Glimmer Cave and 10 wood from trees. Then open Build at home and tap Upgrade on the House tab.'},
   {id:'timber',giver:'pete',title:'Timber!',text:'Half the fences in the village are falling over. Chop down a few trees and bring me 8 pieces of wood?',need:{wood:8},reward:{coin:450,seeds:2,tonic:1},hint:'Walk up to any tree and press E or USE to swing your axe. Three chops fells it, and trees grow back after a couple of minutes.'},
 ];
 const WICK_LORE=[
@@ -2050,7 +2055,7 @@ function usePlot(p){
     if(n===2)toast('Double harvest!','pumpkin');
   }else if(p.state==='empty'||(p.wild&&p.state==='growing'&&p.t>40)){
     if(inv('seeds')<=0){toast(p.wild?'Buy pumpkin seeds from Hazel to speed up regrowth':'You need pumpkin seeds. Hazel sells them.','seeds');sfx('error');return;}
-    take('seeds',1); p.state='growing'; p.dur=p.t=40; sfx('build'); burst(p.x,.7,p.z,'#8a6a3a',8,1.5,.25,.5); updatePlotVisual(p); toast('Planted pumpkin seeds. Ready in 40 seconds.','seeds');
+    take('seeds',1); (S.tips||(S.tips={})).seeds=true; p.state='growing'; p.dur=p.t=40; sfx('build'); burst(p.x,.7,p.z,'#8a6a3a',8,1.5,.25,.5); updatePlotVisual(p); toast('Planted pumpkin seeds. Ready in 40 seconds.','seeds');
   }else toast('Still growing. Check back in '+Math.ceil(p.t)+'s');
 }
 function updatePlots(dt){
@@ -2163,7 +2168,7 @@ function questProgress(q){
   if(q.need)return Object.entries(q.need).map(([k,v])=>({label:ITEMS[k].name,have:Math.min(inv(k),v),need:v}));
   if(q.needFish)return [{label:'Any fish',have:Math.min(fishCount(),q.needFish),need:q.needFish}];
   if(q.flag==='lighthouse')return [{label:'Climb the lighthouse',have:S.flags.lighthouse?1:0,need:1}];
-  if(q.flag==='house2')return [{label:'House level 2',have:S.house>=2?1:0,need:1}];
+  if(q.flag==='house2'){const up=S.house>=2;return [...Object.entries(HOUSE_UP[2]).map(([k,v])=>({label:ITEMS[k].name,have:up?v:Math.min(inv(k),v),need:v})),{label:'Upgrade at home',have:up?1:0,need:1}];}
   return [];
 }
 function questReady(q){return questProgress(q).every(p=>p.have>=p.need);}
@@ -2173,7 +2178,7 @@ function makeOddJob(g){
   const val=Object.entries(need).reduce((a,[k,v])=>a+(ITEMS[k].sell||10)*v,0);
   const k=Object.keys(need)[0], nm=ITEMS[k].name.toLowerCase(), pl=need[k]>1&&!/s$|d$|e$/.test(nm)?'s':'';
   const text=g==='wick'?`I could use a hand, if your legs are younger than mine. Fetch me ${need[k]} ${nm}${pl}? I pay in good coin.`:`Got a little errand if you're bored. I need ${need[k]} ${nm}${pl}. I'll pay better than Hazel.`;
-  return {id:'odd',giver:g,title:'Odd Job: '+ITEMS[k].name,text,need,reward:{coin:Math.round(val*2+100)},hint:GIVERS[g].short+' posts a new odd job each time you finish one.'};
+  return {id:'odd',giver:g,title:'Odd Job: '+ITEMS[k].name,text,need,reward:{coin:Math.round(val*2+100)},hint:needHint(k)+' '+GIVERS[g].short+' posts a new odd job each time you finish one.'};
 }
 function talkTo(g){
   sfx('ui');
@@ -2205,26 +2210,84 @@ function updateTracker(){
   if(!S)return;
   const el=$('#tracker');
   const act=Object.keys(GIVERS).filter(g=>S.qact[g]).sort((a,b)=>(a===S.track?-1:b===S.track?1:0));
-  if(!act.length){el.innerHTML=`<b>Quests available</b>Talk to Pumpkin Pete or Keeper Wick in the village plaza.<div class="navd" id="navDist"></div>`;}
+  if(!act.length){el.innerHTML=`<b>Quests available</b>Talk to Pumpkin Pete or Keeper Wick in the village plaza.<div class="navd" id="navDist"></div><div class="gtip" id="gTip" hidden></div>`;}
   else el.innerHTML=act.map((g,i)=>{const q=giverQuest(g),ready=questReady(q);
-    return `<div class="tq ${i?'sub':''}"><b>${esc(q.title)}</b>`+(i?'':questProgress(q).map(p=>`<div>${esc(p.label)} <span class="pg ${p.have>=p.need?'done':''}">${p.have}/${p.need}</span></div>`).join(''))+(ready?`<div class="done"><b style="display:inline;font-family:inherit">Return to ${GIVERS[g].short}</b></div>`:'')+(i?'':'<div class="navd" id="navDist"></div>')+`</div>`;}).join('')+(act.length>1?'<div class="tswap">Tap to switch quest</div>':'');
+    return `<div class="tq ${i?'sub':''}"><b>${esc(q.title)}</b>`+(i?'':questProgress(q).map(p=>`<div>${esc(p.label)} <span class="pg ${p.have>=p.need?'done':''}">${p.have}/${p.need}</span></div>`).join(''))+(ready?`<div class="done"><b style="display:inline;font-family:inherit">Return to ${GIVERS[g].short}</b></div>`:'')+(i?'':'<div class="navd" id="navDist"></div>')+`</div>`;}).join('')+'<div class="gtip" id="gTip" hidden></div>'+(act.length>1?'<div class="tswap">Tap to switch quest</div>':'');
   for(const g of Object.keys(GIVERS)){const m=MARKS[g];if(!m)continue;const q=giverQuest(g);const has=!S.qact[g];m.visible=has||(q&&questReady(q));m.userData.set(has?'!':'?');}
   navT=0;
+}
+/* ---------- first-time guides: what to tap for upgrades, placing items and using the bag ---------- */
+function guideNow(){
+  if(!S||mode!=='play'||player.dead)return null;
+  const T=S.tips||(S.tips={}), home=S.inside||nearHome()<13, B=IS_TOUCH?'Tap the Build button':'Press B (Build)';
+  if(placing&&!T.place)return {text:'Walk or turn to move the outline. Green means it fits. Then tap Place.',hud:'#pOk'};
+  if(S.qact.pete==='house'&&S.house<2&&canAfford(HOUSE_UP[2])){
+    if(!home)return {text:'You have everything for the upgrade. Head home.'};
+    return {text:B+', then tap Upgrade on the House tab.',hud:'#mBuild',tab:'House',btn:'#upH',btnText:'Tap Upgrade to build your Hollow House.'};
+  }
+  if(inv('lantern')>0&&!T.lamp){
+    if(!home)return {text:'You have a Decorative Lantern. Take it home to place it in your yard.'};
+    if(S.inside)return {text:'Step outside to place your lantern in the yard.'};
+    return {text:B+', open Decorations and tap Place on the Decorative Lantern.',hud:'#mBuild',tab:'Decorations',btn:'[data-p="lamp"]',btnText:'Tap Place, then set the lantern down in your yard.'};
+  }
+  if(inv('tonic')>0&&!T.tonic&&S.hp<S.maxHp*.6)return {text:'Hurt? Open your Bag, choose the Moon Tonic and tap Drink.',hud:'#mBag',slot:'tonic',btn:'#useTonic',btnText:'Tap Drink to restore 60 health.'};
+  if(inv('seeds')>0&&!T.seeds){
+    const plot=decoObjs.some(d=>d.id==='plot');
+    if(home&&!S.inside&&!plot&&canAfford(DECOS.plot.cost))return {text:'Seeds grow in garden plots. '+B+', open Farming and place a Garden Plot, then press E on it to plant.',hud:'#mBuild',tab:'Farming',btn:'[data-p="plot"]',btnText:'Tap Place to build a Garden Plot.'};
+    return {text:'Plant your pumpkin seeds: press E on an empty plot in the Pumpkin Patch'+(plot?' or in your garden':' or build a Garden Plot at home')+'.'};
+  }
+  return null;
+}
+let GUIDE=null;
+function markGuide(el){document.querySelectorAll('.guide').forEach(e=>{if(e!==el)e.classList.remove('guide');});if(el)el.classList.add('guide');}
+function updateGuide(){
+  GUIDE=guideNow();
+  const tip=$('#gTip'); if(tip){tip.hidden=!GUIDE;if(GUIDE)tip.textContent='💡 '+GUIDE.text;}
+  const bub=$('#guideBub'); let el=null, txt=GUIDE&&GUIDE.text;
+  if(GUIDE){
+    if(modalOpen){
+      if(modalKind==='build'&&GUIDE.tab){if(buildTab!==GUIDE.tab){el=modal.querySelector(`[data-t="${GUIDE.tab}"]`);txt='Open the '+GUIDE.tab+' tab.';}else{el=modal.querySelector(GUIDE.btn);txt=GUIDE.btnText||txt;}}
+      else if(modalKind==='bag'&&GUIDE.slot){const sel=modal.querySelector('.slot.sel');if(sel&&sel.dataset.k===GUIDE.slot){el=modal.querySelector(GUIDE.btn);txt=GUIDE.btnText||txt;}else{el=modal.querySelector(`.slot[data-k="${GUIDE.slot}"]`);txt='Choose the '+ITEMS[GUIDE.slot].name+'.';}}
+    }else if(GUIDE.hud)el=$(GUIDE.hud);
+  }
+  if(el&&el.offsetParent===null)el=null;
+  markGuide(el);
+  if(!bub)return;
+  if(!el||!GUIDE){bub.hidden=true;return;}
+  bub.hidden=false; bub.textContent=txt;
+  const r=el.getBoundingClientRect(), w=Math.min(240,innerWidth-24);
+  bub.style.width=w+'px';
+  let x=r.left+r.width/2-w/2, y=r.bottom+10;
+  if(r.left>innerWidth*.6){x=r.left-w-12;y=r.top;}
+  if(y+70>innerHeight)y=r.top-80;
+  bub.style.left=Math.max(12,Math.min(innerWidth-w-12,x))+'px'; bub.style.top=Math.max(8,y)+'px';
 }
 /* ---------- where to go next ---------- */
 let LH_DOOR={x:0,z:0}, navT=0, NAV=null;
 function nearestTree(){let best=null,bd=1e9;for(const t of TREES){if(t.state!=='up')continue;const d=Math.hypot(t.x-player.x,t.z-player.z);if(d<bd){bd=d;best=t;}}return best;}
+function fishSpot(id){ // where to send someone for a fish: the dock, unless that fish rarely bites there
+  const w=t=>{const e=FISH_TABLES[t].find(x=>x[0]===id);return e?e[1]:0;}, dock=SPOTS.find(s=>s.table==='dock')||SPOTS[0];
+  if(!id||w('dock')>=10)return dock;
+  return SPOTS.reduce((b,s)=>w(s.table)>w(b.table)?s:b,dock);
+}
+function needHint(k){
+  if(ITEMS[k]&&ITEMS[k].fish){const sp=fishSpot(k);return `${ITEMS[k].name} bite best at ${sp.name}. Walk to the fishing spot there and press E (or USE) to cast.`;}
+  return {bone:'Skeletons in the Whispering Graveyard drop old bones.',amethyst:'Mine the crystal rocks at Glimmer Cave. Amethyst drops now and then, more often with Hazel\u2019s pickaxe.',stone:'Mine the crystal rocks at Glimmer Cave. Every rock gives stone.',wood:'Walk up to any tree and press E (or USE) to chop it.',pumpkin:'Harvest the glowing ripe pumpkins in the Pumpkin Patch.'}[k]||'';
+}
 function questGoal(q){
   const need=q.need||{}, has=k=>inv(k)>=(need[k]||0);
   if(q.flag==='lighthouse')return {x:LH_DOOR.x,z:LH_DOOR.z,label:'Old Lighthouse'};
   if(q.flag==='house2'){
     const req=HOUSE_UP[2]||{}, short=k=>inv(k)<(req[k]||0);
-    if(short('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:"Buy a kit at Hazel's"};
+    if(short('kit')&&S.coins>=ITEMS.kit.price)return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:"Buy a kit at Hazel's"};
+    if(short('kit')&&!S.qdone.gems)return S.qact.wick==='gems'?questGoal(QBY.gems)||{x:P.wick.x,z:P.wick.z,r:4,label:'Return to Wick'}:{x:P.wick.x,z:P.wick.z,r:4,label:'Ask Wick for work (he pays in kits)'};
+    if(short('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:'Save up '+fmt(ITEMS.kit.price)+' coins for a kit'};
     if(short('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,r:10,label:'Chop trees for wood'};}
     if(short('stone'))return {x:P.cave.x,z:P.cave.z,label:'Glimmer Cave'};
-    return {x:houseDoor.x,z:houseDoor.z+.5,r:5,label:'Your house'};
+    return {x:P.yard.x,z:P.yard.z,r:6,label:'Upgrade at home'};
   }
-  if(q.needFish||Object.keys(need).some(k=>ITEMS[k].fish&&!has(k)))return {x:SPOTS[0].x,z:SPOTS[0].z,label:'The dock'};
+  const wantFish=q.needFish?(fishCount()<q.needFish?[null]:[]):Object.keys(need).filter(k=>ITEMS[k].fish&&!has(k));
+  if(wantFish.length){const sp=fishSpot(wantFish[0]);return {x:sp.x,z:sp.z,r:3,label:'Fish at '+sp.name};}
   if(need.bone&&!has('bone'))return {x:P.graveyard.x,z:P.graveyard.z,label:'Whispering Graveyard'};
   if(need.pumpkin&&!has('pumpkin'))return {x:P.patch.x,z:P.patch.z,label:'Pumpkin Patch'};
   if((need.amethyst&&!has('amethyst'))||(need.stone&&!has('stone')))return {x:P.cave.x,z:P.cave.z,label:'Glimmer Cave'};
@@ -2254,7 +2317,7 @@ function makeNavObjects(){
 }
 function updateNav(dt){
   if(!navBeam)return;
-  navT-=dt; if(navT<=0){navT=.25;NAV=navTarget();const d=$('#navDist');if(d){const dd=NAV?Math.hypot(NAV.x-player.x,NAV.z-player.z):0;d.textContent=!NAV?'':dd<=(NAV.r||NAV_R)?`➜ ${NAV.label} · you're here`:`➜ ${NAV.label} · ${Math.round(dd)} m`;}}
+  navT-=dt; if(navT<=0){navT=.25;NAV=navTarget();updateGuide();const d=$('#navDist');if(d){const dd=NAV?Math.hypot(NAV.x-player.x,NAV.z-player.z):0;d.textContent=!NAV?'':dd<=(NAV.r||NAV_R)?`➜ ${NAV.label} · you're here`:`➜ ${NAV.label} · ${Math.round(dd)} m`;}}
   const show=NAV&&mode==='play'&&!S.inside&&!player.dead;
   const dist=show?Math.hypot(NAV.x-player.x,NAV.z-player.z):0;
   navArrow.visible=!!show&&dist>(NAV.r||NAV_R)&&!fish&&!placing; // the arrow fades out once you reach the area
@@ -2299,7 +2362,7 @@ function removeDeco(o){
 }
 let placing=null, ghost=null;
 function startPlacing(id){
-  closeModal();
+  closeModal(); setTimeout(updateGuide,0);
   placing={id,inside:!!S.inside,rot:Math.round(player.rot/(Math.PI/4))*Math.PI/4};
   ghost=buildDeco(id); ghost.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.6;o.castShadow=false;}}); scene.add(ghost);
   $('#placeui').hidden=false; updatePlaceUI();
@@ -2330,7 +2393,7 @@ function confirmPlace(){
   if((S.store[id]||0)>0)S.store[id]--;
   else if(canAfford(DECOS[id].cost))pay(DECOS[id].cost);
   else{toast('Not enough materials for '+DECOS[id].name);sfx('error');return;}
-  const o=placeDecoObj({id,x:placing.x,z:placing.z,rot:placing.rot,inside:placing.inside}); sfx('build'); burst(o.x,.6,o.z,'#ffd27a',12,2,.3,.6);
+  const o=placeDecoObj({id,x:placing.x,z:placing.z,rot:placing.rot,inside:placing.inside}); sfx('build'); const T=S.tips||(S.tips={}); T.place=true; if(id==='lamp')T.lamp=true; burst(o.x,.6,o.z,'#ffd27a',12,2,.3,.6);
   updatePlaceUI(); save();
   if(!(S.store[id]>0)&&!canAfford(DECOS[id].cost)){stopPlacing();toast(DECOS[id].name+' placed');}
 }
@@ -2361,7 +2424,7 @@ function nearHome(){return Math.hypot(player.x-P.yard.x,player.z-P.yard.z);}
 let modalOpen=false, modalKind=null;
 const modal=$('#modal');
 function openModal(html,kind){modal.style.placeItems='';modal.innerHTML=html;modal.hidden=false;modalOpen=true;modalKind=kind;const x=modal.querySelector('.x');if(x)x.onclick=closeModal;keys={};}
-function closeModal(){modal.hidden=true;modal.innerHTML='';modalOpen=false;modalKind=null;}
+function closeModal(){modal.hidden=true;modal.innerHTML='';modalOpen=false;modalKind=null;if(typeof updateGuide==='function'&&S)setTimeout(updateGuide,0);}
 modal.addEventListener('pointerdown',e=>{if(e.target===modal&&modalKind!=='pause')closeModal();});
 function win(label,body,extraCls=''){return `<div class="panel win ${extraCls}" role="dialog" aria-label="${esc(label)}"><span class="tab-label">${esc(label)}</span><button class="btn x" aria-label="Close">✕</button><div class="body">${body}</div></div>`;}
 function openDialog(o){
@@ -2397,9 +2460,9 @@ function openBag(sel){
   if(sel){const it=ITEMS[sel];det=`<div class="detail"><img class="icon" src="${ICON[sel]}" alt=""><div style="flex:1;min-width:0"><b>${esc(it.name)}</b> <span class="muted">×${inv(sel)}</span><p>${esc(it.desc||'')}</p>${it.sell?`<p>Sells for ${fmt(it.sell)} coins at Hazel's stall.</p>`:''}</div>${sel==='tonic'?'<button class="btn primary" id="useTonic">Drink</button>':''}</div>`;}
   const body=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="coin"><img src="${ICON.coin}" alt="">${fmt(S.coins)} coins</span><span class="muted" style="font-size:13px">Skeletons ${S.stats.skel} · Fish ${S.stats.fish} · Pumpkins ${S.stats.pumpkins} · Ore ${S.stats.ore}</span></div>`+
     (ids.length?`<div class="bag">${ids.map(k=>`<button class="slot ${k===sel?'sel':''}" data-k="${k}" aria-label="${esc(ITEMS[k].name)}"><img src="${ICON[k]}" alt=""><b>${inv(k)}</b></button>`).join('')}</div>`:'<p class="hint">Your bag is empty. Go catch, mine and harvest something!</p>')+det+tools;
-  openModal(win('Bag',body),'bag');
+  openModal(win('Bag',body),'bag'); setTimeout(updateGuide,0);
   modal.querySelectorAll('.slot').forEach(b=>b.onclick=()=>openBag(b.dataset.k));
-  const ut=$('#useTonic'); if(ut)ut.onclick=()=>{if(S.hp>=S.maxHp){toast('Already at full health');return;}take('tonic',1);S.hp=Math.min(S.maxHp,S.hp+60);sfx('magic');burst(player.x,1.2,player.z,'#9ad7ff',16,2,.35,.8,1);refreshHUD();openBag('tonic');};
+  const ut=$('#useTonic'); if(ut)ut.onclick=()=>{if(S.hp>=S.maxHp){toast('Already at full health');return;}take('tonic',1);(S.tips||(S.tips={})).tonic=true;S.hp=Math.min(S.maxHp,S.hp+60);sfx('magic');burst(player.x,1.2,player.z,'#9ad7ff',16,2,.35,.8,1);refreshHUD();openBag('tonic');};
 }
 // ---- quest log
 function openQuests(){
@@ -2445,7 +2508,7 @@ function openBuild(tab){
     const near=(inside?indecoObjs:decoObjs).filter(d=>Math.hypot(d.x-player.x,d.z-player.z)<3);
     if(home)body+=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" id="pickUp" ${near.length?'':'disabled'}>Pick up nearest decoration</button><span class="hint">${near.length?'Picked-up items go to storage and can be placed again for free.':'Stand next to a decoration to pick it up.'}</span></div>`;
   }
-  openModal(win('Build & Upgrade',body),'build');
+  openModal(win('Build & Upgrade',body),'build'); setTimeout(updateGuide,0);
   modal.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>openBuild(b.dataset.t));
   modal.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>startPlacing(b.dataset.p));
   const up=$('#upH'); if(up)up.onclick=upgradeHouse;
