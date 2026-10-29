@@ -240,6 +240,7 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 }
 #toasts{top:max(10px,calc(env(safe-area-inset-top,0px) + 10px));width:min(320px,max(220px,calc(100vw - 560px)))}
 .touch .mb kbd,.touch .sk kbd{display:none}
+.sk.down{transform:scale(.92);border-color:var(--ember);box-shadow:0 0 14px #ff963688}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -747,8 +748,6 @@ const HERO_SCALE=2.05;
 // what each generated part is, by Tripo part number
 const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boot',7:'outfit',8:'skin',9:'outfit',10:'skin',11:'outfit',12:'hair',13:'hair'};
 const ARM_DOWN=1.2, ELBOW=.32, ARM_FWD=-.1, ARM_TWIST=Math.PI/2;
-// face feature anchors on the sculpted face: [surface point, surface normal] in model space
-const HERO_FACE={eyeL:[[.1697,.697,.028],[.989,.087,.117]],eyeR:[[.1172,.699,-.095],[.996,.079,.035]],cheekL:[[.1465,.662,.078],[.812,.198,.549]],cheekR:[[.1003,.665,-.126],[.62,.25,-.74]],mouth:[[.1497,.647,-.052],[.924,-.072,-.375]]};
 function loadHero(){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||!window.fetch)return;
   const b64=()=>fetch('models/hero.b64.txt').then(r=>{if(!r.ok)throw new Error('missing');return r.text();}).then(t=>{const s=atob(t.trim()),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;});
@@ -759,6 +758,30 @@ function loadHero(){
     if(S&&player.model&&S.look.model!=='Classic'){const t=player.tool;rebuildPlayer();if(t)setTool(t);}
     if(mode==='create'){renderCreateOpts();rebuildPreview();}
   }).catch(()=>{HERO=null;});
+}
+const FACE_UV={z0:-.24,w:.48,y0:.46,h:.42};
+function faceTexture(L){
+  const W=512,H=Math.round(512*FACE_UV.h/FACE_UV.w), c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
+  const X=z=>(z-FACE_UV.z0)/FACE_UV.w*W, Y=y=>(1-(y-FACE_UV.y0)/FACE_UV.h)*H, S=d=>d/FACE_UV.w*W;
+  g.fillStyle=L.skin; g.fillRect(0,0,W,H);
+  // front fringe and anything above the hairline takes the hair colour
+  g.fillStyle=L.hair; g.fillRect(0,0,W,Y(.763));
+  const grd=g.createLinearGradient(0,Y(.763),0,Y(.752)); grd.addColorStop(0,L.hair); grd.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=grd; g.fillRect(0,Y(.763),W,Y(.752)-Y(.763));
+  // blush
+  for(const [y,z] of [[.664,.084],[.666,-.136]]){const r=g.createRadialGradient(X(z),Y(y),0,X(z),Y(y),S(.034));r.addColorStop(0,'rgba(236,120,110,.75)');r.addColorStop(1,'rgba(236,120,110,0)');g.fillStyle=r;g.beginPath();g.ellipse(X(z),Y(y),S(.034),S(.024),0,0,TAU);g.fill();}
+  // eyes, on the sculpted eyeballs
+  for(const [y,z] of [[.698,.028],[.700,-.094]]){
+    g.fillStyle='#1d1410'; g.beginPath(); g.ellipse(X(z),Y(y),S(.022),S(.029),0,0,TAU); g.fill();
+    g.fillStyle='#4a2c1e'; g.beginPath(); g.ellipse(X(z),Y(y-.008),S(.014),S(.014),0,0,TAU); g.fill();
+    g.fillStyle='#1d1410'; g.beginPath(); g.ellipse(X(z),Y(y-.004),S(.009),S(.01),0,0,TAU); g.fill();
+    g.fillStyle='#ffffff'; g.beginPath(); g.ellipse(X(z+.008),Y(y+.011),S(.0075),S(.0085),0,0,TAU); g.fill();
+    g.beginPath(); g.ellipse(X(z-.009),Y(y-.012),S(.0035),S(.0035),0,0,TAU); g.fill();
+    // brow
+    g.strokeStyle=L.hair; g.lineWidth=S(.0055); g.lineCap='round'; g.beginPath(); g.arc(X(z),Y(y+.012),S(.028),Math.PI*1.25,Math.PI*1.75); g.stroke();
+  }
+  // smile along the sculpted mouth
+  g.strokeStyle='#6b2a20'; g.lineWidth=S(.0045); g.lineCap='round'; g.beginPath(); g.arc(X(-.046),Y(.661),S(.019),Math.PI*.22,Math.PI*.78); g.stroke();
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
 }
 function makeCharacter(L){return (L.model!=='Classic'&&HERO)?buildHero(L):buildCharacter(L);}
 function buildHero(L){
@@ -772,13 +795,12 @@ function buildHero(L){
       const role=HERO_ROLE[+o.name.replace(/\D+/g,'')]||'outfit';
       const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:'#2b2622',boot:'#4a3122'}[role];
       o.material=new THREE.MeshStandardMaterial({color:col,roughness:role==='hair'?.6:.85,skinning:true});
-      if(o.name.endsWith('_2')){ // the face piece also holds the front fringe: paint it as hair
-        o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position, c=new Float32Array(p.count*3), cs=new THREE.Color(L.skin), chr=new THREE.Color(L.hair);
-        for(let i=0;i<p.count;i++){const cc=p.getY(i)>.762?chr:cs;c[i*3]=cc.r;c[i*3+1]=cc.g;c[i*3+2]=cc.b;}
-        o.geometry.setAttribute('color',new THREE.BufferAttribute(c,3));
-        o.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,skinning:true});
+      if(o.name.endsWith('_2')){ // the face piece: paint eyes, brows, blush, mouth and the front fringe onto it
+        o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2);
+        for(let i=0;i<p.count;i++){uv[i*2]=(p.getZ(i)-FACE_UV.z0)/FACE_UV.w; uv[i*2+1]=(p.getY(i)-FACE_UV.y0)/FACE_UV.h;}
+        o.geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+        o.material=new THREE.MeshStandardMaterial({map:faceTexture(L),roughness:.85,skinning:true});
       }
-      o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
       if(role==='hair'&&hatted){ // tuck the spikes under the hat
         o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position;
         for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>.70)p.setY(i,.70+(y-.70)*.5);}
@@ -811,20 +833,6 @@ function buildHero(L){
   // face and hat, built in the model's own space then handed to the head bone
   const head=bones.Head_2||bones.Head_0;
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
-  const ZA=new THREE.Vector3(0,0,1);
-  const onFace=(obj,key,inset)=>{const f=HERO_FACE[key],N=new THREE.Vector3().fromArray(f[1]).normalize();
-    obj.quaternion.setFromUnitVectors(ZA,N); obj.position.fromArray(f[0]).addScaledVector(N,-inset); src.add(obj); obj.updateMatrixWorld(true); head.attach(obj);};
-  const eyeM=M('#1d1410',{roughness:.25});
-  for(const k of ['eyeL','eyeR']){
-    const eg=new THREE.Group();
-    const e=new THREE.Mesh(Sph(.027,14,10),eyeM); e.scale.set(.85,1.15,.42); eg.add(e);
-    const h=new THREE.Mesh(Sph(.0075,8,6),EM('#ffffff')); h.position.set(-.007,.012,.011); eg.add(h);
-    const h2=new THREE.Mesh(Sph(.0035,6,4),EM('#ffffff')); h2.position.set(.007,-.01,.011); eg.add(h2);
-    onFace(eg,k,.006);
-  }
-  for(const k of ['cheekL','cheekR']){const c=new THREE.Mesh(Sph(.026,10,8),M('#ee8a7c',{roughness:.9}));c.scale.set(1,.62,.18);onFace(c,k,.002);}
-  const mo=new THREE.Mesh(new THREE.TorusGeometry(.017,.0033,6,16,Math.PI*.8),M('#6b2a20')); mo.rotation.z=Math.PI*1.1; mo.position.y=.006;
-  const mg=new THREE.Group(); mg.add(mo); onFace(mg,'mouth',.0005);
   if(L.hat&&L.hat!=='None'){
     const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=Math.PI/2; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
     attachRaw(hg,.02,L.hat==='Pumpkin'?.84:.71,0);
@@ -2161,7 +2169,20 @@ stick.addEventListener('pointermove',e=>{if(e.pointerId===joy.id)moveJoy(e);});
 const endJoy=e=>{if(e.pointerId!==joy.id)return;joy.id=null;joy.x=joy.z=0;knob.style.transform='';};
 stick.addEventListener('pointerup',endJoy); stick.addEventListener('pointercancel',endJoy);
 function moveJoy(e){let dx=e.clientX-joy.cx,dy=e.clientY-joy.cy;const d=Math.hypot(dx,dy),m=50;if(d>m){dx*=m/d;dy*=m/d;}knob.style.transform=`translate(${dx}px,${dy}px)`;joy.x=dx/m;joy.z=dy/m;}
-$('#sSlash').onclick=doSlash; $('#sFire').onclick=doFire; $('#sBolt').onclick=doBolt; $('#sAct').onclick=interact;
+// Touch buttons fire on touch-down so they work while another finger steers the joystick.
+// Holding an attack button keeps attacking whenever its cooldown allows.
+function press(el,fn,repeat){
+  let held=null, lastTouch=0;
+  const stop=()=>{el.classList.remove('down');if(held){clearInterval(held);held=null;}};
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse')return;
+    e.preventDefault(); lastTouch=performance.now(); el.classList.add('down'); fn();
+    if(repeat){clearInterval(held);held=setInterval(fn,120);}
+  });
+  ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(t=>el.addEventListener(t,stop));
+  el.addEventListener('click',()=>{if(performance.now()-lastTouch>600)fn();});
+}
+press($('#sSlash'),doSlash,true); press($('#sFire'),doFire,true); press($('#sBolt'),doBolt,true); press($('#sAct'),interact,false);
 $('#mBag').onclick=()=>openBag(); $('#mQuest').onclick=openQuests; $('#mBuild').onclick=()=>openBuild(); $('#mPause').onclick=()=>openPause();
 $('#pRot').onclick=()=>{if(placing)placing.rot+=Math.PI/4;}; $('#pOk').onclick=confirmPlace; $('#pCancel').onclick=stopPlacing;
 ['#sSlash','#sFire','#sBolt','#sAct','#mBag','#mQuest','#mBuild','#mPause','#pRot','#pOk','#pCancel'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter')e.stopPropagation();}));
