@@ -182,6 +182,10 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 .detail{display:flex;gap:12px;align-items:center;padding:10px;border-radius:8px;background:#ffffff08;min-height:64px}
 .detail .icon{width:56px;height:56px}
 .detail p{margin:2px 0 0;color:var(--muted);font-size:13px}
+ #modal.side{place-items:center end;background:linear-gradient(90deg,#05031000 30%,#05031088 60%)}
+#modal.side .win{width:min(540px,56vw)}
+body.talking #tracker,body.talking #prompt{visibility:hidden}
+#modal.side .dlg{width:min(560px,62vw)}
 .dlg{width:min(720px,100%);display:grid;grid-template-columns:1fr auto;gap:14px;padding:18px;position:relative;align-self:end}
 .dlg .who{font-family:var(--f-label);font-weight:800;color:var(--glow);font-size:17px;margin-bottom:6px}
 .dlg p{margin:0;line-height:1.55;font-size:15px}
@@ -1352,7 +1356,7 @@ function buildStall(){
   for(const sx of [-1,1]){const l=buildLantern(false);l.position.set(sx*1.7,2.45,1.1);g.add(l);mk(Cyl(.01,.01,.4,3),M('#222'),sx*1.7,2.85,1.1,g);}
   addCol(P.merchant.x-1.2,P.merchant.z+.3,1.2);addCol(P.merchant.x+1.2,P.merchant.z+.3,1.2);addCol(P.merchant.x+2.6,P.merchant.z+.8,.7);
   plight('#ffb060',1.5,14,P.merchant.x,3,P.merchant.z+2,.2);
-  INTER.push({x:P.merchant.x,z:P.merchant.z+1.6,r:2.6,label:()=>'Shop with Hazel',act:()=>openShop('buy')});
+  INTER.push({x:P.merchant.x,z:P.merchant.z+1.6,r:2.6,label:()=>{const q=S&&S.qact.hazel?giverQuest('hazel'):null;return q&&questReady(q)?'Shop with Hazel · favor ready':'Shop with Hazel';},act:()=>{const q=S.qact.hazel?giverQuest('hazel'):null;openShop(q&&questReady(q)?'friend':'buy');}});
 }
 function buildPatch(){
   const c=P.patch, g=new THREE.Group(); g.position.set(c.x,.5,c.z); scene.add(g);
@@ -2297,7 +2301,7 @@ function makeFavor(g){
 }
 function giftPoints(g,id){const F=FRIENDS[g];return F.loves.includes(id)?25:F.likes.includes(id)?12:5;}
 function openFriend(g,msg){
-  sfx('ui');
+  sfx('ui'); if(g==='hazel')lookAtHazel(); else TALK=null;
   const G=GIVERS[g], R=rel(g), F=FRIENDS[g], next=HEART_AT[R.lvl+1];
   const wait=Math.max(0,Math.ceil((R.gt+GIFT_WAIT-S.t)/60));
   let body=`<div class="detail" style="align-items:center"><div style="flex:1"><b>${esc(G.name)}</b> ${heartsHTML(g)}<p>${R.lvl>=5?'Best friends. Nothing left to unlock.':`${R.pts} / ${next} friendship to the next heart.`}</p>${msg?`<p style="color:var(--glow)">${esc(msg)}</p>`:''}</div></div>`;
@@ -2313,7 +2317,7 @@ function openFriend(g,msg){
     sfx(p>12?'catch':'pick');addFriend(g,p);updateTracker();openFriend(g,line);});
 }
 function talkTo(g){
-  sfx('ui');
+  sfx('ui'); if(g==='hazel')lookAtHazel(); else TALK=null;
   const G=GIVERS[g]; let q=giverQuest(g);
   if(!q){S.odds[g]=S.odds[g]||makeFavor(g);q=S.odds[g];}
   const fa={label:'Friendship ♥',fn:()=>openFriend(g)};
@@ -2557,21 +2561,21 @@ function nearHome(){return Math.hypot(player.x-P.yard.x,player.z-P.yard.z);}
 ================================================================= */
 let modalOpen=false, modalKind=null;
 const modal=$('#modal');
-function openModal(html,kind){modal.style.placeItems='';modal.innerHTML=html;modal.hidden=false;modalOpen=true;modalKind=kind;const x=modal.querySelector('.x');if(x)x.onclick=closeModal;keys={};}
-function closeModal(){modal.hidden=true;modal.innerHTML='';modalOpen=false;modalKind=null;if(typeof updateGuide==='function'&&S)setTimeout(updateGuide,0);}
+function openModal(html,kind){modal.style.placeItems='';modal.classList.toggle('side',!!TALK);modal.innerHTML=html;modal.hidden=false;modalOpen=true;modalKind=kind;const x=modal.querySelector('.x');if(x)x.onclick=closeModal;keys={};}
+function closeModal(){TALK=null;modal.classList.remove('side');modal.hidden=true;modal.innerHTML='';modalOpen=false;modalKind=null;if(typeof updateGuide==='function'&&S)setTimeout(updateGuide,0);}
 modal.addEventListener('pointerdown',e=>{if(e.target===modal&&modalKind!=='pause')closeModal();});
 function win(label,body,extraCls=''){return `<div class="panel win ${extraCls}" role="dialog" aria-label="${esc(label)}"><span class="tab-label">${esc(label)}</span><button class="btn x" aria-label="Close">✕</button><div class="body">${body}</div></div>`;}
 function openDialog(o){
   const text=o.raw?o.text:esc(o.text);
   openModal(`<div class="panel dlg" role="dialog"><div><div class="who">${o.who.includes('class="hearts"')?o.who:esc(o.who)}${o.title?` <span class="muted" style="font-size:13px;font-family:var(--f-body)">· ${esc(o.title)}</span>`:''}</div><p>${text}</p>${o.extra||''}</div><div class="acts">${o.acts.map((a,i)=>`<button class="btn ${a.primary?'primary':''}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div></div>`,'dialog');
-  modal.style.placeItems='end center';
+  modal.style.placeItems=TALK?'end end':'end center';
   modal.querySelectorAll('.acts button').forEach(b=>b.onclick=()=>{sfx('ui');o.acts[+b.dataset.i].fn();});
   const first=modal.querySelector('.acts button'); first&&first.focus();
 }
 
 // ---- shop
 function openShop(tab='buy'){
-  sfx('ui');
+  sfx('ui'); lookAtHazel();
   let body=`<div class="tabs"><button data-t="buy" class="${tab==='buy'?'on':''}">Buy</button><button data-t="sell" class="${tab==='sell'?'on':''}">Sell</button><button data-t="friend" class="${tab==='friend'?'on':''}">Friendship ♥</button><span style="flex:1"></span><span class="coin"><img src="${ICON.coin}" alt="">${fmt(S.coins)}</span></div>`;
   if(tab==='buy'){
     body+=`<p class="hint">“Welcome, welcome! Mind the cat. Everything here is fresh, or at least freshly dusted.”</p><div class="rows">`+SHOP.map(id=>{const it=ITEMS[id];const owned=id==='pickaxe'&&S.pick==='basic', pr=priceOf(id);return `<div class="row"><img class="icon" src="${ICON[id]}" alt=""><div class="nm">${esc(it.name)}${it.qty?' ×'+it.qty:''}<small>${esc(it.desc)}</small></div><span class="coin"><img src="${ICON.coin}" alt="">${fmt(pr)}</span><button class="btn ${S.coins>=pr&&!owned?'primary':''}" data-buy="${id}" ${owned||S.coins<pr?'disabled':''}>${owned?'Owned':'Buy'}</button></div>`;}).join('')+`</div>`;
@@ -2818,7 +2822,7 @@ function findNearest(){
   if(placing||fish)return;
   for(const it of INTER){const d=Math.hypot(it.x-player.x,it.z-player.z);if(d<it.r&&d<best){const l=it.label();if(l){best=d;nearest={it,l};}}}
   for(const sp of SPOTS){const d=Math.hypot(sp.x-player.x,sp.z-player.z);if(d<2.2&&d<best){best=d;nearest={it:{x:sp.x,z:sp.z,act:()=>startFishing(sp)},l:'Fish at '+sp.name+(inv('bait')?` (bait ×${inv('bait')})`:'')};}}
-  for(const g of Object.keys(GIVERS)){if(Math.hypot(P[g].x-player.x,P[g].z-player.z)<2.8){nearest={it:{x:P[g].x,z:P[g].z,act:()=>talkTo(g)},l:'Talk to '+GIVERS[g].name};}}
+  for(const g of Object.keys(GIVERS)){if(g==='hazel')continue;if(Math.hypot(P[g].x-player.x,P[g].z-player.z)<2.8){nearest={it:{x:P[g].x,z:P[g].z,act:()=>talkTo(g)},l:'Talk to '+GIVERS[g].name};}}
 }
 function interact(){
   if(mode!=='play'||modalOpen||player.dead)return;
@@ -2882,11 +2886,24 @@ function updateRegions(dt){
 const camT=new THREE.Vector3(), camOff=new THREE.Vector3(0,19,15);
 let shake=0;
 function snapCamera(){camT.set(player.x,player.y,player.z);camera.position.copy(camT).addScaledVector(camOff,zoom*(S&&S.inside?.74:1));camera.lookAt(camT);}
+let TALK=null, talkLast=null, talkF=0; const _np=new THREE.Vector3(), _nl=new THREE.Vector3(), _fp=new THREE.Vector3(), _fl=new THREE.Vector3();
+function hazelHead(){return new THREE.Vector3(hazelObj.position.x,hazelObj.position.y+1.5,hazelObj.position.z);} // her face, under the stall roof
+function lookAtHazel(){if(mode==='play'&&!S.inside&&hazelObj)TALK=hazelHead();}
 function updateCamera(dt){
   camT.lerp(new THREE.Vector3(player.x,player.y,player.z),Math.min(1,dt*6));
-  camera.position.copy(camT).addScaledVector(camOff,zoom*(S&&S.inside?.74:1));
+  _np.copy(camT).addScaledVector(camOff,zoom*(S&&S.inside?.74:1)); _nl.set(camT.x,camT.y+.8,camT.z);
+  if(TALK&&!modalOpen)TALK=null;
+  if(TALK)talkLast=TALK;
+  talkF+=((TALK?1:0)-talkF)*Math.min(1,dt*4);
+  if(talkF>.002&&talkLast){ // low and close, with Hazel on the left so her window can sit on the right
+    const e=talkF*talkF*(3-2*talkF), H=talkLast;
+    _fp.set(H.x+.8,H.y+.5,H.z+5.3); _fl.set(H.x+1.65,H.y+.15,H.z); // between the stall lanterns, under the awning
+    camera.position.lerpVectors(_np,_fp,e); _nl.lerp(_fl,e);
+  }else camera.position.copy(_np);
+  document.body.classList.toggle('talking',talkF>.3); if(bloom)bloom.strength=.55*(1-.55*talkF);
+  if(player.model&&talkF>.002)player.model.visible=talkF<.5&&!player.dead; // the camera passes close to you, so step out of the shot
   if(shake>0){shake-=dt;camera.position.x+=rand(-.15,.15)*shake*4;camera.position.y+=rand(-.15,.15)*shake*4;}
-  camera.lookAt(camT.x,camT.y+.8,camT.z);
+  camera.lookAt(_nl);
   moon.position.set(camT.x-22,48,camT.z-30); moon.target.position.copy(camT);
 }
 let mode='title', clock=0, titleA=0, createEdit=false;
