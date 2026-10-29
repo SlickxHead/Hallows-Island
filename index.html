@@ -111,12 +111,12 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 #controls kbd{font:800 11px var(--f-body);background:#ffffff1a;border-radius:3px;padding:1px 5px;color:var(--text)}
 #stick{position:absolute;left:max(18px,env(safe-area-inset-left,0px));bottom:max(22px,env(safe-area-inset-bottom,0px));width:132px;height:132px;border-radius:50%;background:radial-gradient(circle,#ffffff10,#ffffff06);border:2px solid #ffffff22}
 #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f3dcb0,#b98a52);box-shadow:0 4px 10px #0008}
-#toasts{position:absolute;left:50%;top:max(70px,calc(env(safe-area-inset-top,0px) + 70px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(360px,90vw)}
+#toasts{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
 .toast{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 8px;font-weight:800;font-size:14px;animation:tin .25s ease-out}
 .toast img{width:34px;height:34px}
 .toast.out{opacity:0;transform:translateY(-8px);transition:all .35s}
 @keyframes tin{from{opacity:0;transform:translateY(-10px) scale(.96)}}
-#banner{position:absolute;left:0;right:0;top:24%;text-align:center;pointer-events:none;opacity:0;transition:opacity .6s}
+#banner{position:absolute;left:0;right:0;top:28%;text-align:center;pointer-events:none;opacity:0;transition:opacity .6s}
 #banner small{display:block;font-family:var(--f-label);letter-spacing:.4em;font-size:13px;color:var(--parchment);text-transform:uppercase}
 #banner b{display:block;font-family:var(--f-logo);font-size:clamp(40px,7vw,72px);color:var(--glow);text-shadow:0 0 24px #ff8a2a,0 3px 0 #3a1505;font-weight:800}
 #floaters{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -179,10 +179,15 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 .muted{color:var(--muted)}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;font-size:14px}
 .confirm{padding:10px;border-radius:8px;background:#e1463a22;border:1px solid #e1463a66;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-@media (max-width:760px){
+@media (max-width:760px) and (orientation:portrait){
   #create{grid-template-columns:1fr;grid-template-rows:38vh auto auto;overflow:auto;pointer-events:auto}
   #create .spacer{order:-1}
   #create .panel{max-height:none}
+}
+@media (max-width:760px) and (orientation:landscape){
+  #create{grid-template-columns:minmax(200px,1fr) minmax(120px,1fr) minmax(180px,1fr)}
+}
+@media (max-width:760px){
   .dlg{grid-template-columns:1fr}
   .dlg .acts{min-width:0}
   #mini{width:104px;height:104px}
@@ -192,6 +197,49 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
   .row{grid-template-columns:40px 1fr auto;}
   .row .coin{grid-column:2}
 }
+
+/* ---------- landscape only on phones ---------- */
+#rotate{position:fixed;inset:0;z-index:60;background:radial-gradient(ellipse at 50% 40%,#2a2350,var(--night) 70%);display:grid;place-items:center;text-align:center;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#rotate .rc{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:300px}
+#rotate svg{width:96px;height:96px;animation:turn 2.4s ease-in-out infinite}
+#rotate b{font-family:var(--f-label);font-size:20px;letter-spacing:.04em;color:var(--parchment)}
+#rotate p{margin:0;color:var(--muted);line-height:1.5}
+@keyframes turn{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (max-height:500px){
+  #mini{width:92px;height:92px}
+  .mb{width:38px;height:38px}.mb svg{width:20px;height:20px}
+  .tr{gap:6px}
+  #region{font-size:11px}
+  #hud .tl{width:min(220px,36vw);gap:6px}
+  .plate{padding:7px 10px;gap:5px}
+  .plate .nm{font-size:13px}
+  #tracker{font-size:12px;padding:7px 9px;line-height:1.3}
+  #stick{width:112px;height:112px}
+  #knob{width:48px;height:48px;margin:-24px}
+  .sk{width:50px;height:50px}.sk svg{width:28px;height:28px}
+  .sk.act{width:66px;height:66px;font-size:13px}
+  #skills{gap:8px}
+  #prompt{bottom:max(92px,calc(env(safe-area-inset-bottom,0px) + 92px))}
+  #fishui{bottom:max(120px,calc(env(safe-area-inset-bottom,0px) + 120px));padding:9px 12px;gap:6px}
+  #placeui{bottom:max(84px,calc(env(safe-area-inset-bottom,0px) + 84px))}
+  #controls{display:none}
+  #banner{top:30%}
+  #banner b{font-size:44px}
+  #title{gap:10px;padding-block:max(12px,env(safe-area-inset-top,0px)) 12px}
+  .logo .h{font-size:60px}
+  .logo .s{font-size:20px}
+  .menu{padding:6px}
+  .menu button{padding:6px 10px;font-size:15px}
+  #create{gap:10px;padding:max(10px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+  #create .panel{padding:12px;gap:10px}
+  .sw{width:26px;height:26px}
+  .chip{padding:5px 10px;font-size:12px}
+  .win{padding:26px 12px 12px}
+  .dlg{padding:12px;gap:10px}
+  .dlg p{font-size:14px}
+}
+#toasts{top:max(10px,calc(env(safe-area-inset-top,0px) + 10px));width:min(320px,max(220px,calc(100vw - 560px)))}
+.touch .mb kbd,.touch .sk kbd{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -282,6 +330,12 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 </div>
 
 <div id="modal" class="ui" hidden></div>
+<div id="rotate" hidden role="alert"><div class="rc">
+  <svg viewBox="0 0 64 64" fill="none" stroke="#ead3a2" stroke-width="3" stroke-linecap="round" aria-hidden="true"><rect x="20" y="8" width="24" height="44" rx="5"/><path d="M29 46h6"/></svg>
+  <b>Turn your phone sideways</b>
+  <p>Hallows Island plays in landscape. Rotate your phone to keep exploring.</p>
+</div></div>
+
 <div id="fade"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -692,7 +746,9 @@ let HERO=null;                       // {scene} once models/hero.glb has loaded
 const HERO_SCALE=2.05;
 // what each generated part is, by Tripo part number
 const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boot',7:'outfit',8:'skin',9:'outfit',10:'skin',11:'outfit',12:'hair',13:'hair'};
-const ARM_DOWN=1.22;
+const ARM_DOWN=1.2, ELBOW=.32, ARM_FWD=-.1, ARM_TWIST=Math.PI/2;
+// face feature anchors on the sculpted face: [surface point, surface normal] in model space
+const HERO_FACE={eyeL:[[.1697,.697,.028],[.989,.087,.117]],eyeR:[[.1172,.699,-.095],[.996,.079,.035]],cheekL:[[.1465,.662,.078],[.812,.198,.549]],cheekR:[[.1003,.665,-.126],[.62,.25,-.74]],mouth:[[.1497,.647,-.052],[.924,-.072,-.375]]};
 function loadHero(){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||!window.fetch)return;
   const b64=()=>fetch('models/hero.b64.txt').then(r=>{if(!r.ok)throw new Error('missing');return r.text();}).then(t=>{const s=atob(t.trim()),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;});
@@ -716,6 +772,12 @@ function buildHero(L){
       const role=HERO_ROLE[+o.name.replace(/\D+/g,'')]||'outfit';
       const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:'#2b2622',boot:'#4a3122'}[role];
       o.material=new THREE.MeshStandardMaterial({color:col,roughness:role==='hair'?.6:.85,skinning:true});
+      if(o.name.endsWith('_2')){ // the face piece also holds the front fringe: paint it as hair
+        o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position, c=new Float32Array(p.count*3), cs=new THREE.Color(L.skin), chr=new THREE.Color(L.hair);
+        for(let i=0;i<p.count;i++){const cc=p.getY(i)>.762?chr:cs;c[i*3]=cc.r;c[i*3+1]=cc.g;c[i*3+2]=cc.b;}
+        o.geometry.setAttribute('color',new THREE.BufferAttribute(c,3));
+        o.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,skinning:true});
+      }
       o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
       if(role==='hair'&&hatted){ // tuck the spikes under the hat
         o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position;
@@ -725,18 +787,22 @@ function buildHero(L){
     }
   });
   g.updateMatrixWorld(true);
-  const ctl=['Spine_0','1_Left_Limb_0','1_Right_Limb_0','0_Left_Limb_0','0_Right_Limb_0','0_Left_Limb_1','0_Right_Limb_1'];
+  const ctl=['Spine_0','1_Left_Limb_0','1_Right_Limb_0','1_Left_Limb_1','1_Right_Limb_1','0_Left_Limb_0','0_Right_Limb_0','0_Left_Limb_1','0_Right_Limb_1'];
   const rest={}, qi=new THREE.Quaternion();
   for(const n of ctl){const b=bones[n];if(!b)continue;const pq=b.parent.getWorldQuaternion(new THREE.Quaternion());rest[n]={b,q:b.quaternion.clone(),pq,pqi:pq.clone().invert()};}
-  const D=new THREE.Quaternion(), E=new THREE.Euler();
+  const D=new THREE.Quaternion(), E=new THREE.Euler(), Q1=new THREE.Quaternion(), Q2=new THREE.Quaternion(), AX=new THREE.Vector3(1,0,0), AZ=new THREE.Vector3(0,0,1);
+  const setQ=(n,q)=>{const r=rest[n];if(!r)return;r.b.quaternion.copy(r.pqi).multiply(q).multiply(r.pq).multiply(r.q);};
+  // arm: twist palms toward the body, lower it, then swing it forward/back
+  const armQ=(swing,down)=>{D.setFromAxisAngle(AX,swing);Q1.setFromAxisAngle(AZ,down);Q2.setFromAxisAngle(AX,ARM_TWIST);return D.multiply(Q1).multiply(Q2);};
   const setB=(n,x,y,z,order)=>{const r=rest[n];if(!r)return;E.set(x,y,z,order||'XYZ');D.setFromEuler(E);r.b.quaternion.copy(r.pqi).multiply(D).multiply(r.pq).multiply(r.q);};
   // proxies that the game already animates; pose() turns them into bone rotations
   const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
   const pose=()=>{
     fix.position.y=Pp.body.position.y;
     setB('Spine_0',0,Pp.body.rotation.y,0);
-    setB('1_Left_Limb_0',Pp.armL.rotation.x,0,-ARM_DOWN-Pp.armL.rotation.z,'XYZ');
-    setB('1_Right_Limb_0',Pp.armR.rotation.x,0,ARM_DOWN+Pp.armR.rotation.z,'XYZ');
+    setQ('1_Left_Limb_0',armQ(Pp.armL.rotation.x+ARM_FWD,-ARM_DOWN-Pp.armL.rotation.z));
+    setQ('1_Right_Limb_0',armQ(Pp.armR.rotation.x+ARM_FWD,ARM_DOWN+Pp.armR.rotation.z));
+    setB('1_Left_Limb_1',0,0,ELBOW); setB('1_Right_Limb_1',0,0,-ELBOW);
     const lL=Pp.legL.rotation.x, lR=Pp.legR.rotation.x;
     setB('0_Left_Limb_0',lL,0,0); setB('0_Right_Limb_0',lR,0,0);
     setB('0_Left_Limb_1',Math.max(0,lL)*1.1,0,0); setB('0_Right_Limb_1',Math.max(0,lR)*1.1,0,0);
@@ -745,13 +811,20 @@ function buildHero(L){
   // face and hat, built in the model's own space then handed to the head bone
   const head=bones.Head_2||bones.Head_0;
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
-  const eyeM=M('#1d1410',{roughness:.3});
-  for(const k of [-1,1]){
-    const e=new THREE.Mesh(Sph(.03,10,8),eyeM); e.scale.set(.55,1.25,1); attachRaw(e,.157,.668,k*.068);
-    const h=new THREE.Mesh(Sph(.009,6,4),EM('#ffffff')); attachRaw(h,.181,.684,k*.068-.008);
-    const c=new THREE.Mesh(Sph(.028,8,6),M('#e88a7a')); c.scale.set(.35,.5,1); attachRaw(c,.135,.612,k*.112);
+  const ZA=new THREE.Vector3(0,0,1);
+  const onFace=(obj,key,inset)=>{const f=HERO_FACE[key],N=new THREE.Vector3().fromArray(f[1]).normalize();
+    obj.quaternion.setFromUnitVectors(ZA,N); obj.position.fromArray(f[0]).addScaledVector(N,-inset); src.add(obj); obj.updateMatrixWorld(true); head.attach(obj);};
+  const eyeM=M('#1d1410',{roughness:.25});
+  for(const k of ['eyeL','eyeR']){
+    const eg=new THREE.Group();
+    const e=new THREE.Mesh(Sph(.027,14,10),eyeM); e.scale.set(.85,1.15,.42); eg.add(e);
+    const h=new THREE.Mesh(Sph(.0075,8,6),EM('#ffffff')); h.position.set(-.007,.012,.011); eg.add(h);
+    const h2=new THREE.Mesh(Sph(.0035,6,4),EM('#ffffff')); h2.position.set(.007,-.01,.011); eg.add(h2);
+    onFace(eg,k,.006);
   }
-  const mo=new THREE.Mesh(Box(.006,.008,.04),M('#7a3b2e')); attachRaw(mo,.166,.585,0);
+  for(const k of ['cheekL','cheekR']){const c=new THREE.Mesh(Sph(.026,10,8),M('#ee8a7c',{roughness:.9}));c.scale.set(1,.62,.18);onFace(c,k,.002);}
+  const mo=new THREE.Mesh(new THREE.TorusGeometry(.017,.0033,6,16,Math.PI*.8),M('#6b2a20')); mo.rotation.z=Math.PI*1.1; mo.position.y=.006;
+  const mg=new THREE.Group(); mg.add(mo); onFace(mg,'mouth',.0005);
   if(L.hat&&L.hat!=='None'){
     const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=Math.PI/2; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
     attachRaw(hg,.02,L.hat==='Pumpkin'?.84:.71,0);
@@ -2082,7 +2155,7 @@ let zoom=1;
 canvas.addEventListener('wheel',e=>{if(mode==='play'){zoom=clamp(zoom+Math.sign(e.deltaY)*.08,.65,1.45);}},{passive:true});
 // touch joystick
 const stick=$('#stick'), knob=$('#knob');
-if(IS_TOUCH){stick.hidden=false;$('#sAct').hidden=false;}
+if(IS_TOUCH){stick.hidden=false;$('#sAct').hidden=false;document.documentElement.classList.add('touch');}
 stick.addEventListener('pointerdown',e=>{joy.id=e.pointerId;const r=stick.getBoundingClientRect();joy.cx=r.left+r.width/2;joy.cy=r.top+r.height/2;stick.setPointerCapture(e.pointerId);moveJoy(e);});
 stick.addEventListener('pointermove',e=>{if(e.pointerId===joy.id)moveJoy(e);});
 const endJoy=e=>{if(e.pointerId!==joy.id)return;joy.id=null;joy.x=joy.z=0;knob.style.transform='';};
@@ -2279,7 +2352,7 @@ function loop(now){
   else if(mode==='create'){if(cChar){cRot+=drag===null?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;if(cChar.userData.pose)cChar.userData.pose();}
     const narrow=innerWidth<760;cCam.position.set(0,1.5,narrow?6.4:5.6);cCam.lookAt(0,1.0,0);}
   else if(mode==='play'){
-    if(!modalOpen){updatePlayer(dt);updateSkels(dt);updateCombatFx(dt);updateFishing(dt);updatePlacing();}
+    if(!modalOpen&&!portrait){updatePlayer(dt);updateSkels(dt);updateCombatFx(dt);updateFishing(dt);updatePlacing();}
     else{updateCombatFx(dt);}
     updatePlots(dt); updateNodes(dt);
     findNearest(); updatePrompt(); updateCamera(dt); drawMini(dt); updateRegions(dt); updateCooldowns();
@@ -2324,6 +2397,20 @@ $('#bInstall').onclick=async()=>{
 // first tap in a regular mobile browser tab goes full screen (Android); installed apps already are
 if(IS_TOUCH&&canFullscreen())addEventListener('pointerdown',function once(){removeEventListener('pointerdown',once);toggleFullscreen();},{once:false});
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+
+
+/* ---------- landscape lock on phones ---------- */
+const IS_PHONE=IS_TOUCH&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600;
+let portrait=false;
+function checkOrient(){
+  const p=IS_PHONE&&innerHeight>innerWidth;
+  if(p!==portrait){portrait=p;$('#rotate').hidden=!p;keys={};if(joy){joy.x=joy.z=0;joy.id=null;}}
+}
+function lockLandscape(){try{const o=screen.orientation;if(o&&o.lock)o.lock('landscape').catch(()=>{});}catch(e){}}
+addEventListener('resize',checkOrient);
+addEventListener('orientationchange',()=>setTimeout(checkOrient,250));
+document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)lockLandscape();});
+checkOrient();
 
 /* =================================================================
    Boot
