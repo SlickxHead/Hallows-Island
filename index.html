@@ -277,6 +277,8 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
     <div class="opt" id="optStyle"><h3>Hair style</h3><div class="chips" id="oStyle"></div></div>
     <div class="opt"><h3>Hair color</h3><div class="swatches" id="oHair"></div></div>
     <div class="opt"><h3>Outfit</h3><div class="swatches" id="oOutfit"></div></div>
+    <div class="opt"><h3>Pants</h3><div class="swatches" id="oPants"></div></div>
+    <div class="opt"><h3>Shoes</h3><div class="swatches" id="oShoes"></div></div>
     <div class="opt"><h3>Hat</h3><div class="chips" id="oHat"></div></div>
   </section>
   <div class="spacer" id="previewDrag"></div>
@@ -542,7 +544,10 @@ const LOOK_OPTS={
   style:['Short','Long','Spiky'],
   outfit:['#4a3527','#2e3d5a','#5a2e48','#33553a','#8a4520','#3a3a44'],
   hat:['None','Witch Hat','Beanie','Pumpkin'],
+  pants:['#2b2622','#3a3f5c','#5a4636','#6b6f78','#2f4a3a','#5e2f45','#8a7a5c'],
+  shoes:['#4a3122','#221c1a','#7a5434','#9a3a2e','#c98a9a','#3d4a6a','#d8cdb4'],
 };
+const PANTS0='#2b2622', SHOES0='#4a3122';
 
 /* =================================================================
    Places on the island
@@ -707,7 +712,7 @@ function buildHouse(level,pal){
 /* ---------- characters ---------- */
 function buildCharacter(L,opt={}){
   const g=new THREE.Group(), Pp={};
-  const skin=M(L.skin), cloth=M(L.outfit), pants=M('#2b2622'), boot=M('#4a3122'), hairM=M(L.hair);
+  const skin=M(L.skin), cloth=M(L.outfit), pants=M(L.pants||PANTS0), boot=M(L.shoes||SHOES0), hairM=M(L.hair);
   const mkLeg=x=>{const lg=new THREE.Group();lg.position.set(x,.62,0);g.add(lg);mk(Box(.2,.5,.22),pants,0,-.25,0,lg);mk(Box(.23,.17,.32),boot,0,-.53,.04,lg);return lg;};
   Pp.legL=mkLeg(-.12); Pp.legR=mkLeg(.12);
   const body=new THREE.Group(); g.add(body); Pp.body=body;
@@ -816,11 +821,11 @@ const HERO_KIND={
   girl:{rot:0,walk:2.9,run:2.1,squash:.70,hat:[0,.71,.04,.84,0]},
 };
 function tintGirl(o,role,L){
-  const want=new THREE.Color({hair:L.hair,outfit:L.outfit,skin:L.skin,face:L.skin}[role]);
+  const want=new THREE.Color({hair:L.hair,outfit:L.outfit,skin:L.skin,face:L.skin,pants:L.pants||PANTS0,boot:L.shoes||SHOES0,pack:'#000'}[role]);
   const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:role==='hair'?.6:.85,skinning:true});
-  if(role==='hair'||role==='outfit'){ // shading kept, color swapped
+  if(role==='hair'||role==='outfit'||role==='pants'||role==='boot'){ // shading kept, color swapped
     const lum=o.geometry.userData.lum, col=new Float32Array(lum.length*3);
-    for(let i=0;i<lum.length;i++){const l=Math.min(1.6,lum[i]);col[i*3]=Math.min(1,want.r*l);col[i*3+1]=Math.min(1,want.g*l);col[i*3+2]=Math.min(1,want.b*l);}
+    for(let i=0;i<lum.length;i++){const l=Math.min(1.25,lum[i]*.92);col[i*3]=Math.min(1,want.r*l);col[i*3+1]=Math.min(1,want.g*l);col[i*3+2]=Math.min(1,want.b*l);}
     o.geometry=o.geometry.clone(); o.geometry.setAttribute('color',new THREE.BufferAttribute(col,3));
   }else if(role==='skin'||role==='face'){ // shift the whole part toward the new skin, so eyes and blush keep their shapes
     const m=o.geometry.userData.mean; mat.color.setRGB(Math.min(1.8,want.r/Math.max(.05,m[0])),Math.min(1.8,want.g/Math.max(.05,m[1])),Math.min(1.8,want.b/Math.max(.05,m[2])));
@@ -842,7 +847,7 @@ function buildHero(L,girl){
       o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
     }else if(o.isMesh){
       const role=HERO_ROLE[+o.name.replace(/\D+/g,'')]||'outfit';
-      const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:'#2b2622',boot:'#4a3122'}[role];
+      const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:L.pants||PANTS0,boot:L.shoes||SHOES0}[role];
       o.material=new THREE.MeshStandardMaterial({color:col,roughness:role==='hair'?.6:.85,skinning:true});
       if(o.name.endsWith('_2')){ // the face piece: eyes, brows, blush, mouth and the front fringe are painted on
         o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2);
@@ -2041,16 +2046,16 @@ function questGoal(q){
   if(q.flag==='lighthouse')return {x:LH_DOOR.x,z:LH_DOOR.z,label:'Old Lighthouse'};
   if(q.flag==='house2'){
     const req=HOUSE_UP[2]||{}, short=k=>inv(k)<(req[k]||0);
-    if(short('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,label:"Buy a kit at Hazel's"};
-    if(short('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,label:'Chop trees for wood'};}
+    if(short('kit'))return {x:P.merchant.x,z:P.merchant.z+1.6,r:4,label:"Buy a kit at Hazel's"};
+    if(short('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,r:10,label:'Chop trees for wood'};}
     if(short('stone'))return {x:P.cave.x,z:P.cave.z,label:'Glimmer Cave'};
-    return {x:houseDoor.x,z:houseDoor.z+.5,label:'Your house'};
+    return {x:houseDoor.x,z:houseDoor.z+.5,r:5,label:'Your house'};
   }
   if(q.needFish||Object.keys(need).some(k=>ITEMS[k].fish&&!has(k)))return {x:SPOTS[0].x,z:SPOTS[0].z,label:'The dock'};
   if(need.bone&&!has('bone'))return {x:P.graveyard.x,z:P.graveyard.z,label:'Whispering Graveyard'};
   if(need.pumpkin&&!has('pumpkin'))return {x:P.patch.x,z:P.patch.z,label:'Pumpkin Patch'};
   if((need.amethyst&&!has('amethyst'))||(need.stone&&!has('stone')))return {x:P.cave.x,z:P.cave.z,label:'Glimmer Cave'};
-  if(need.wood&&!has('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,label:'Chop trees for wood'};}
+  if(need.wood&&!has('wood')){const t=nearestTree();if(t)return {x:t.x,z:t.z,r:10,label:'Chop trees for wood'};}
   return null;
 }
 function navTarget(){
@@ -2058,23 +2063,17 @@ function navTarget(){
   const order=[S.track,...Object.keys(GIVERS).filter(g=>g!==S.track)];
   for(const g of order){
     if(!S.qact[g])continue; const q=giverQuest(g); if(!q)continue;
-    if(questReady(q))return {x:P[g].x,z:P[g].z,label:'Return to '+GIVERS[g].short};
+    if(questReady(q))return {x:P[g].x,z:P[g].z,r:4,label:'Return to '+GIVERS[g].short};
     const t=questGoal(q); if(t)return t;
   }
   let best=null,bd=1e9;
-  for(const g of Object.keys(GIVERS)){if(S.qact[g])continue;const d=Math.hypot(P[g].x-player.x,P[g].z-player.z);if(d<bd){bd=d;best={x:P[g].x,z:P[g].z,label:'Talk to '+GIVERS[g].short}};}
+  for(const g of Object.keys(GIVERS)){if(S.qact[g])continue;const d=Math.hypot(P[g].x-player.x,P[g].z-player.z);if(d<bd){bd=d;best={x:P[g].x,z:P[g].z,r:4,label:'Talk to '+GIVERS[g].short}};}
   return best;
 }
 let navBeam=null, navArrow=null;
+const NAV_R=8; // how close counts as reaching a goal area
 function makeNavObjects(){
-  navBeam=new THREE.Group();
-  const bm=new THREE.Mesh(new THREE.CylinderGeometry(.35,.9,26,16,1,true),new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.16,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
-  bm.position.y=13; navBeam.add(bm);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(1.1,1.45,40),new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
-  ring.rotation.x=-Math.PI/2; ring.position.y=.06; navBeam.add(ring); navBeam.userData.ring=ring;
-  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),new THREE.MeshBasicMaterial({color:'#ffe9a8',fog:false})); gem.position.y=3.4; gem.scale.y=1.5; navBeam.add(gem); navBeam.userData.gem=gem;
-  glow('#ffc96a',2.4,navBeam,0,3.4,0,.7);
-  navBeam.visible=false; scene.add(navBeam);
+  navBeam=new THREE.Group(); navBeam.visible=false; // no marker on the spot itself: the arrow and the map point to the area
   const sh=new THREE.Shape(); sh.moveTo(0,.55); sh.lineTo(.42,0); sh.lineTo(.17,0); sh.lineTo(.17,-.35); sh.lineTo(-.17,-.35); sh.lineTo(-.17,0); sh.lineTo(-.42,0); sh.lineTo(0,.55);
   const ag=new THREE.ShapeGeometry(sh); ag.rotateX(-Math.PI/2); // point along -z, flat on the ground
   navArrow=new THREE.Mesh(ag,new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.85,depthWrite:false,fog:false}));
@@ -2082,12 +2081,10 @@ function makeNavObjects(){
 }
 function updateNav(dt){
   if(!navBeam)return;
-  navT-=dt; if(navT<=0){navT=.25;NAV=navTarget();const d=$('#navDist');if(d)d.textContent=NAV?`➜ ${NAV.label} · ${Math.round(Math.hypot(NAV.x-player.x,NAV.z-player.z))} m`:'';}
+  navT-=dt; if(navT<=0){navT=.25;NAV=navTarget();const d=$('#navDist');if(d){const dd=NAV?Math.hypot(NAV.x-player.x,NAV.z-player.z):0;d.textContent=!NAV?'':dd<=(NAV.r||NAV_R)?`➜ ${NAV.label} · you're here`:`➜ ${NAV.label} · ${Math.round(dd)} m`;}}
   const show=NAV&&mode==='play'&&!S.inside&&!player.dead;
   const dist=show?Math.hypot(NAV.x-player.x,NAV.z-player.z):0;
-  navBeam.visible=!!show&&dist>3;
-  if(navBeam.visible){navBeam.position.set(NAV.x,groundH(NAV.x,NAV.z),NAV.z);navBeam.userData.gem.position.y=3.4+Math.sin(clock*2.5)*.25;navBeam.userData.gem.rotation.y=clock*1.5;const s=1+.12*Math.sin(clock*3);navBeam.userData.ring.scale.set(s,s,s);}
-  navArrow.visible=!!show&&dist>5&&!fish&&!placing;
+  navArrow.visible=!!show&&dist>(NAV.r||NAV_R)&&!fish&&!placing; // the arrow fades out once you reach the area
   if(navArrow.visible){const a=Math.atan2(NAV.x-player.x,NAV.z-player.z);navArrow.position.set(player.x+Math.sin(a)*2.3,player.y+.1,player.z+Math.cos(a)*2.3);navArrow.rotation.set(0,a+Math.PI,0);navArrow.material.opacity=.55+.3*Math.sin(clock*4);}
 }
 
@@ -2371,11 +2368,11 @@ function drawMini(dt){
   for(const ch of CHESTS)if(!S.chests[ch.id]&&Math.hypot(ch.x-player.x,ch.z-player.z)<22)dot(ch.x,ch.z,3,'#ffe08a');
   for(const r of REGIONS)if(!S.disc[r.id]){g.fillStyle='#ffffff55';g.font='bold 9px sans-serif';g.textAlign='center';g.fillText('?',cx+r.x*s,cy+r.z*s+3);}
   g.setTransform(1,0,0,1,0,0);
-  if(NAV){ // goal: a pulsing diamond, or an arrow on the rim when it is off the map
+  if(NAV){ // goal: a soft circle over the area, or an arrow on the rim when it is off the map
     let mx=(cx+NAV.x*s)*z+ox, my=(cy+NAV.z*s)*z+oy; const dx=mx-150, dy=my-150, dd=Math.hypot(dx,dy), pul=1+.18*Math.sin(clock*5);
     g.save();
     if(dd>128){const a=Math.atan2(dy,dx);g.translate(150+Math.cos(a)*128,150+Math.sin(a)*128);g.rotate(a);g.beginPath();g.moveTo(14*pul,0);g.lineTo(-6,-10);g.lineTo(-2,0);g.lineTo(-6,10);g.closePath();}
-    else{g.translate(mx,my);g.rotate(Math.PI/4);g.beginPath();g.rect(-8*pul,-8*pul,16*pul,16*pul);}
+    else{const rr=Math.max(10,(NAV.r||NAV_R)*s*z)*(1+.06*Math.sin(clock*3));g.beginPath();g.arc(mx,my,rr,0,TAU);g.fillStyle='rgba(255,210,122,.22)';g.fill();g.setLineDash([5,4]);g.strokeStyle='rgba(255,210,122,.9)';g.lineWidth=2;g.stroke();g.restore();g.save();g.beginPath();}
     g.fillStyle='#ffd27a';g.fill();g.strokeStyle='#3a1505';g.lineWidth=3;g.stroke();g.restore();
   }
   g.translate(150,150); g.rotate(-player.rot+Math.PI); g.beginPath(); g.moveTo(0,-11); g.lineTo(7,8); g.lineTo(0,4); g.lineTo(-7,8); g.closePath(); g.fillStyle='#fff'; g.fill(); g.strokeStyle='#000'; g.lineWidth=2; g.stroke();
@@ -2519,7 +2516,7 @@ function fadeTo(mid,after){const f=$('#fade');f.classList.add('on');setTimeout((
 // --- character creation scene
 const cScene=new THREE.Scene(); cScene.background=new THREE.Color('#171331'); cScene.fog=new THREE.Fog('#171331',8,22);
 const cCam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.1,60);
-let cChar=null, cRot=-.35, LOOK={model:'Detailed',skin:LOOK_OPTS.skin[1],hair:LOOK_OPTS.hair[0],style:'Spiky',outfit:LOOK_OPTS.outfit[0],hat:'None'};
+let cChar=null, cRot=-.35, LOOK={model:'Detailed',skin:LOOK_OPTS.skin[1],hair:LOOK_OPTS.hair[0],style:'Spiky',outfit:LOOK_OPTS.outfit[0],pants:PANTS0,shoes:SHOES0,hat:'None'};
 function buildCreateScene(){
   cScene.add(new THREE.HemisphereLight('#a0a6ff','#2c2038',.7));
   const k=new THREE.PointLight('#ffb060',2.2,14,2); k.position.set(-2.4,2.6,2.4); cScene.add(k);
@@ -2547,10 +2544,10 @@ function renderCreateOpts(){
   const det=LOOK.model!=='Classic';
   $('#optStyle').hidden=det; $('#modelNote').hidden=!det;
   const girl=LOOK.model==='Girl', ready=girl?HEROINE:HERO;
-  $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. Hair, skin and outfit colors tint her.':'He has spiky hair. More hair styles are coming.';
-  sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); ch('#oHat',LOOK_OPTS.hat,'hat');
+  $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. The colors below tint her hair, skin and clothes.':'He has spiky hair. More hair styles are coming.';
+  sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); if(!LOOK.pants)LOOK.pants=PANTS0; if(!LOOK.shoes)LOOK.shoes=SHOES0; sw('#oPants',LOOK_OPTS.pants,'pants'); sw('#oShoes',LOOK_OPTS.shoes,'shoes'); ch('#oHat',LOOK_OPTS.hat,'hat');
 }
-$('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
+$('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),pants:p(LOOK_OPTS.pants),shoes:p(LOOK_OPTS.shoes),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
 $('#bBack').onclick=()=>{if(createEdit){mode='play';$('#create').hidden=true;$('#hud').hidden=false;}else toTitle();};
 $('#bBegin').onclick=finishCreate;
 $('#pname').addEventListener('keydown',e=>{if(e.key==='Enter')finishCreate();});
