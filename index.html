@@ -220,7 +220,8 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
   <section class="panel">
     <span class="tab-label">Character Creation</span>
     <div class="opt"><h3>Skin</h3><div class="swatches" id="oSkin"></div></div>
-    <div class="opt"><h3>Hair style</h3><div class="chips" id="oStyle"></div></div>
+    <div class="opt"><h3>Model</h3><div class="chips" id="oModel"></div><p class="hint" id="modelNote" style="margin-top:6px" hidden></p></div>
+    <div class="opt" id="optStyle"><h3>Hair style</h3><div class="chips" id="oStyle"></div></div>
     <div class="opt"><h3>Hair color</h3><div class="swatches" id="oHair"></div></div>
     <div class="opt"><h3>Outfit</h3><div class="swatches" id="oOutfit"></div></div>
     <div class="opt"><h3>Hat</h3><div class="chips" id="oHat"></div></div>
@@ -290,6 +291,8 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 'use strict';
 (function(){
@@ -467,6 +470,7 @@ const IN_TABS=['House','Furniture','Decor','Lighting'];
 const LOOK_OPTS={
   skin:['#f5d0b0','#e3a982','#c28456','#8a5634','#5c3822','#cfe2cf'],
   hair:['#2a1c14','#5b3a22','#a8662e','#e6cd8a','#d9d9e3','#b8432d','#6a3f9e'],
+  model:['Detailed','Classic'],
   style:['Short','Long','Spiky'],
   outfit:['#4a3527','#2e3d5a','#5a2e48','#33553a','#8a4520','#3a3a44'],
   hat:['None','Witch Hat','Beanie','Pumpkin'],
@@ -666,6 +670,10 @@ function buildCharacter(L,opt={}){
       mk(Cone(.11,.36,5),hairM,0,.42,0,head);
     }
   }
+  addHat(L,head,opt);
+  g.userData.P=Pp; return g;
+}
+function addHat(L,head,opt){
   if(L.hat==='Witch Hat'){
     mk(Cyl(.62,.62,.04,24),M('#2a2233'),0,.28,0,head);
     const cn=mk(Cone(.33,.86,16),M('#2a2233'),0,.7,-.02,head); cn.rotation.set(-.12,0,.16);
@@ -678,7 +686,82 @@ function buildCharacter(L,opt={}){
   }else if(L.hat==='Pumpkin'){
     const ph=buildPumpkin(.26); ph.position.y=.26; ph.rotation.z=.15; head.add(ph);
   }
-  g.userData.P=Pp; return g;
+}
+/* ---------- Detailed hero (Tripo3D model, rigged; posed from code) ---------- */
+let HERO=null;                       // {scene} once models/hero.glb has loaded
+const HERO_SCALE=2.05;
+// what each generated part is, by Tripo part number
+const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boot',7:'outfit',8:'skin',9:'outfit',10:'skin',11:'outfit',12:'hair',13:'hair'};
+const ARM_DOWN=1.22;
+function loadHero(){
+  if(!THREE.GLTFLoader||!THREE.SkeletonUtils||!window.fetch)return;
+  fetch('models/hero.glb').then(r=>{if(!r.ok)throw new Error('missing');return r.arrayBuffer();})
+  .then(buf=>new Promise((res,rej)=>new THREE.GLTFLoader().parse(buf,'',res,rej)))
+  .then(gl=>{
+    HERO={scene:gl.scene};
+    if(S&&player.model&&S.look.model!=='Classic'){const t=player.tool;rebuildPlayer();if(t)setTool(t);}
+    if(mode==='create'){renderCreateOpts();rebuildPreview();}
+  }).catch(()=>{HERO=null;});
+}
+function makeCharacter(L){return (L.model!=='Classic'&&HERO)?buildHero(L):buildCharacter(L);}
+function buildHero(L){
+  const g=new THREE.Group(), fix=new THREE.Group();
+  fix.rotation.y=-Math.PI/2; fix.scale.setScalar(HERO_SCALE); g.add(fix);
+  const src=THREE.SkeletonUtils.clone(HERO.scene); fix.add(src);
+  const bones={}, hatted=L.hat==='Witch Hat'||L.hat==='Beanie';
+  src.traverse(o=>{
+    if(o.isBone)bones[o.name.replace(/^tripo:*/,'')]=o;
+    if(o.isMesh){
+      const role=HERO_ROLE[+o.name.replace(/\D+/g,'')]||'outfit';
+      const col={hair:L.hair,pack:'#5b3d27',skin:L.skin,outfit:L.outfit,pants:'#2b2622',boot:'#4a3122'}[role];
+      o.material=new THREE.MeshStandardMaterial({color:col,roughness:role==='hair'?.6:.85,skinning:true});
+      o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
+      if(role==='hair'&&hatted){ // tuck the spikes under the hat
+        o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position;
+        for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>.70)p.setY(i,.70+(y-.70)*.5);}
+        p.needsUpdate=true; o.geometry.computeBoundingSphere();
+      }
+    }
+  });
+  g.updateMatrixWorld(true);
+  const ctl=['Spine_0','1_Left_Limb_0','1_Right_Limb_0','0_Left_Limb_0','0_Right_Limb_0','0_Left_Limb_1','0_Right_Limb_1'];
+  const rest={}, qi=new THREE.Quaternion();
+  for(const n of ctl){const b=bones[n];if(!b)continue;const pq=b.parent.getWorldQuaternion(new THREE.Quaternion());rest[n]={b,q:b.quaternion.clone(),pq,pqi:pq.clone().invert()};}
+  const D=new THREE.Quaternion(), E=new THREE.Euler();
+  const setB=(n,x,y,z,order)=>{const r=rest[n];if(!r)return;E.set(x,y,z,order||'XYZ');D.setFromEuler(E);r.b.quaternion.copy(r.pqi).multiply(D).multiply(r.pq).multiply(r.q);};
+  // proxies that the game already animates; pose() turns them into bone rotations
+  const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
+  const pose=()=>{
+    fix.position.y=Pp.body.position.y;
+    setB('Spine_0',0,Pp.body.rotation.y,0);
+    setB('1_Left_Limb_0',Pp.armL.rotation.x,0,-ARM_DOWN-Pp.armL.rotation.z,'XYZ');
+    setB('1_Right_Limb_0',Pp.armR.rotation.x,0,ARM_DOWN+Pp.armR.rotation.z,'XYZ');
+    const lL=Pp.legL.rotation.x, lR=Pp.legR.rotation.x;
+    setB('0_Left_Limb_0',lL,0,0); setB('0_Right_Limb_0',lR,0,0);
+    setB('0_Left_Limb_1',Math.max(0,lL)*1.1,0,0); setB('0_Right_Limb_1',Math.max(0,lR)*1.1,0,0);
+  };
+  pose(); g.updateMatrixWorld(true);
+  // face and hat, built in the model's own space then handed to the head bone
+  const head=bones.Head_2||bones.Head_0;
+  const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
+  const eyeM=M('#1d1410',{roughness:.3});
+  for(const k of [-1,1]){
+    const e=new THREE.Mesh(Sph(.03,10,8),eyeM); e.scale.set(.55,1.25,1); attachRaw(e,.157,.668,k*.068);
+    const h=new THREE.Mesh(Sph(.009,6,4),EM('#ffffff')); attachRaw(h,.181,.684,k*.068-.008);
+    const c=new THREE.Mesh(Sph(.028,8,6),M('#e88a7a')); c.scale.set(.35,.5,1); attachRaw(c,.135,.612,k*.112);
+  }
+  const mo=new THREE.Mesh(Box(.006,.008,.04),M('#7a3b2e')); attachRaw(mo,.166,.585,0);
+  if(L.hat&&L.hat!=='None'){
+    const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=Math.PI/2; hg.scale.setScalar(L.hat==='Pumpkin'?.5:.44);
+    attachRaw(hg,.02,L.hat==='Pumpkin'?.84:.71,0);
+  }
+  // the hand: tools attach here exactly as they do on the classic body
+  const hb=bones['1_Right_Limb_2']||bones['1_Right_Limb_1'];
+  Pp.hand=new THREE.Object3D(); g.add(Pp.hand);
+  const hp=(bones['1_Right_Limb_4']||hb).getWorldPosition(new THREE.Vector3()); Pp.hand.position.copy(hp); Pp.hand.updateMatrixWorld(true);
+  hb.attach(Pp.hand);
+  g.userData.P=Pp; g.userData.pose=pose; g.userData.hero=true;
+  return g;
 }
 function buildSkeleton(){
   const g=new THREE.Group(), Pp={};
@@ -1414,7 +1497,7 @@ function makeTools(){
 function setTool(t){if(player.tool===t)return;Object.values(TOOLS).forEach(o=>{if(o.parent)o.parent.remove(o);});if(t&&TOOLS[t])player.P.hand.add(TOOLS[t]);player.tool=t;}
 function rebuildPlayer(){
   if(player.model)scene.remove(player.model);
-  player.model=buildCharacter(S.look); player.P=player.model.userData.P; scene.add(player.model);
+  player.model=makeCharacter(S.look); player.P=player.model.userData.P; scene.add(player.model);
   player.tool=null; setTool('sword');
 }
 
@@ -2062,6 +2145,7 @@ function updatePlayer(dt){
   mineCD=Math.max(0,mineCD-dt);
   if(clock-player.lastHit>6&&S.hp<S.maxHp){S.hp=Math.min(S.maxHp,S.hp+dt*3);hpDirty=true;}
   playerLight.position.set(player.x,player.y+2.4,player.z+.6);
+  if(player.model.userData.pose)player.model.userData.pose();
   if(player.tool==='pick'&&player.swing<=0&&mineCD<=0&&!nearest)setTool('sword');
 }
 let hpDirty=false, discT=0;
@@ -2092,7 +2176,7 @@ function fadeTo(mid,after){const f=$('#fade');f.classList.add('on');setTimeout((
 // --- character creation scene
 const cScene=new THREE.Scene(); cScene.background=new THREE.Color('#171331'); cScene.fog=new THREE.Fog('#171331',8,22);
 const cCam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.1,60);
-let cChar=null, cRot=-.35, LOOK={skin:LOOK_OPTS.skin[1],hair:LOOK_OPTS.hair[0],style:'Spiky',outfit:LOOK_OPTS.outfit[0],hat:'None'};
+let cChar=null, cRot=-.35, LOOK={model:'Detailed',skin:LOOK_OPTS.skin[1],hair:LOOK_OPTS.hair[0],style:'Spiky',outfit:LOOK_OPTS.outfit[0],hat:'None'};
 function buildCreateScene(){
   cScene.add(new THREE.HemisphereLight('#a0a6ff','#2c2038',.7));
   const k=new THREE.PointLight('#ffb060',2.2,14,2); k.position.set(-2.4,2.6,2.4); cScene.add(k);
@@ -2104,7 +2188,7 @@ function buildCreateScene(){
   const l=buildLantern(true); l.position.set(-1.6,0,-1.2); cScene.add(l);
   for(let i=0;i<30;i++)glow('#ffe27a',.18,cScene,rand(-4,4),rand(.5,3.5),rand(-4,1),.8);
 }
-function rebuildPreview(){if(cChar)cScene.remove(cChar);cChar=buildCharacter(LOOK);cScene.add(cChar);}
+function rebuildPreview(){if(cChar)cScene.remove(cChar);cChar=makeCharacter(LOOK);cScene.add(cChar);}
 function openCreate(edit=false){
   createEdit=edit; mode='create';
   $('#title').hidden=true; $('#hud').hidden=true; $('#create').hidden=false;
@@ -2115,9 +2199,14 @@ function openCreate(edit=false){
 function renderCreateOpts(){
   const sw=(el,list,key)=>{$(el).innerHTML=list.map(c=>`<button class="sw ${LOOK[key]===c?'on':''}" style="background:${c}" data-v="${c}" aria-label="${key} ${c}"></button>`).join('');$(el).querySelectorAll('button').forEach(b=>b.onclick=()=>{LOOK[key]=b.dataset.v;sfx('ui');renderCreateOpts();rebuildPreview();});};
   const ch=(el,list,key)=>{$(el).innerHTML=list.map(c=>`<button class="chip ${LOOK[key]===c?'on':''}" data-v="${c}">${c}</button>`).join('');$(el).querySelectorAll('button').forEach(b=>b.onclick=()=>{LOOK[key]=b.dataset.v;sfx('ui');renderCreateOpts();rebuildPreview();});};
+  if(!LOOK.model)LOOK.model='Detailed';
+  ch('#oModel',LOOK_OPTS.model,'model');
+  const det=LOOK.model!=='Classic';
+  $('#optStyle').hidden=det; $('#modelNote').hidden=!det;
+  $('#modelNote').textContent=HERO?'The detailed model has spiky hair. More hair styles are coming.':'Loading the detailed model…';
   sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); ch('#oHat',LOOK_OPTS.hat,'hat');
 }
-$('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
+$('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
 $('#bBack').onclick=()=>{if(createEdit){mode='play';$('#create').hidden=true;$('#hud').hidden=false;}else toTitle();};
 $('#bBegin').onclick=finishCreate;
 $('#pname').addEventListener('keydown',e=>{if(e.key==='Enter')finishCreate();});
@@ -2186,7 +2275,7 @@ function loop(now){
   if(peteObj){peteObj.userData.P.body.position.y=Math.sin(clock*1.6)*.03;peteObj.userData.P.head.rotation.z=Math.sin(clock*.8)*.12;peteObj.userData.P.armR.rotation.z=Math.sin(clock*1.3)*.15;}
   if(hazelObj){hazelObj.userData.P.body.position.y=Math.sin(clock*1.8+1)*.03;hazelObj.userData.P.head.rotation.y=Math.sin(clock*.6)*.4;hazelObj.userData.P.armL.rotation.x=-.4+Math.sin(clock*2)*.2;}
   if(mode==='title'||mode==='titlehow'){titleA+=dt*.05;const r=52;camera.position.set(Math.cos(titleA)*r,28,Math.sin(titleA)*r);camera.lookAt(0,0,0);moon.position.set(-22,48,-30);moon.target.position.set(0,0,0);}
-  else if(mode==='create'){if(cChar){cRot+=drag===null?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;}
+  else if(mode==='create'){if(cChar){cRot+=drag===null?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;if(cChar.userData.pose)cChar.userData.pose();}
     const narrow=innerWidth<760;cCam.position.set(0,1.5,narrow?6.4:5.6);cCam.lookAt(0,1.0,0);}
   else if(mode==='play'){
     if(!modalOpen){updatePlayer(dt);updateSkels(dt);updateCombatFx(dt);updateFishing(dt);updatePlacing();}
@@ -2241,7 +2330,7 @@ if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('
 function boot(){
   try{renderIcons();}catch(e){}
   buildWorld(); makeTools(); makeFishingGear(); slashFx=makeSlashFx(); buildCreateScene(); buildMiniBg(); resize();
-  S=null; toTitle();
+  S=null; toTitle(); loadHero();
   // a stand-in player for title (hidden)
   requestAnimationFrame(loop);
 }

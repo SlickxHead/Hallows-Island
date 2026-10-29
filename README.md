@@ -32,7 +32,12 @@ After the first launch the game works offline. Progress is saved on the device.
 | Bag / Quests / Build | Top-right buttons | I / Q / B |
 | Pause | Menu button | Esc |
 
+## Characters
+
+The player character is a 3D model generated with Tripo3D, split into parts and rigged with a skeleton. The game colors it from your character-creator choices and animates its bones in code (walking, sword swings, fishing, mining). The original blocky character is still available as **Classic** in the character creator.
+
 ## Files
 
 - `index.html` — the whole game (three.js r128, loaded from cdnjs and cached for offline use)
+- `models/hero.glb` — the rigged player character
 - `manifest.webmanifest`, `sw.js`, `icons/` — what makes it installable as an app
