@@ -508,6 +508,7 @@ const QUESTS=[
   {id:'bones',giver:'wick',title:'Restless Graveyard',text:'The graveyard has been getting restless lately. Could you clear out the skeletons and bring back 3 old bones?',need:{bone:3},reward:{coin:500,pumpkin:1,amethyst:1},hint:'Skeletons roam the Whispering Graveyard, north of the village. Press J or Space to swing your sword.'},
   {id:'light',giver:'wick',title:"The Keeper's Light",text:"I kept the old lighthouse for forty years, but my knees won't manage those stairs any more. Would you climb up and check that the lamp still burns?",flag:'lighthouse',reward:{coin:300,bait:3},hint:'Follow the lantern path east to the Old Lighthouse. Walk up to its door and press E (or USE) to climb.'},
   {id:'fish',giver:'pete',title:'Supper by Moonlight',text:"I'm hosting a moonlit supper and I'm short on fish. Catch 2 of any kind for me?",needFish:2,reward:{coin:350,seeds:3},hint:'Fish from the end of the dock on Moonlit Beach. Press E to cast, then again when you see the bite.'},
+  {id:'patty',giver:'pete',title:'Lost in the Mist',text:'Have you seen my Patty? She went to watch the fireflies by Silverveil Falls last night and never came home. Would you find her and walk her back to the village?',flag:'patty',reward:{coin:500,tonic:2},hint:'Patty was last seen near Silverveil Falls, north of the village. Talk to her, then walk her back to the village plaza. She will follow you.'},
   {id:'pumpkins',giver:'pete',title:'Patch Work',text:'Harvest season waits for no one. Bring me 5 pumpkins from the patch, would you?',need:{pumpkin:5},reward:{coin:400,lantern:1},hint:'The Pumpkin Patch is southwest of the village. Ripe pumpkins glow a little.'},
   {id:'gems',giver:'wick',title:'Glimmer in the Dark',text:'In my day we polished the lighthouse lens with Glimmer Cave amethyst. Bring me 3 and I will pay you in something useful.',need:{amethyst:3},reward:{coin:600,kit:1},hint:'Glimmer Cave is northwest. Walk up to the glowing crystal rocks out front and press E (or USE) to mine them. Amethyst drops now and then.'},
   {id:'house',giver:'pete',title:'Home Sweet Hollow',text:'That cottage of yours is looking cramped. Upgrade your house to level 2. Hazel sells upgrade kits, and Keeper Wick has been known to hand them out too.',flag:'house2',reward:{coin:800,moonstone:1},hint:'You need an Upgrade Kit (Hazel sells them, and Keeper Wick gives one for his amethyst job), 10 stone from Glimmer Cave and 10 wood from trees. Then open Build at home and tap Upgrade on the House tab.'},
@@ -851,6 +852,104 @@ function updatePete(dt){
   if(MARKS.pete){MARKS.pete.position.x=P.pete.x;MARKS.pete.position.z=P.pete.z;}
   // Pete's own Tripo animations: a look-around idle and a walk, blended by how fast he is going
   p.aIdle.setEffectiveWeight(1-p.walk); p.aWalk.setEffectiveWeight(p.walk); p.mixer.update(dt);
+}
+
+/* ---------- Pumpkin Patty: Pete's sweetheart. Lost by the falls until you walk her home, then she strolls the plaza too ---------- */
+const PATTY_HOME={x:-1,z:-1.5,r:6.5};
+let PATTY=null, pattyObj=null, pattyCol=null, pattySpot=null;
+const pattyInter={x:-9999,z:-9999,r:2.6,label:()=>PATTY?'Talk to Patty':null,act:()=>talkPatty()};
+const PATTY_LINES=['Pete hums when he thinks nobody is listening. It is mostly off-key. I adore it.','We met at the harvest dance. He stepped on my vines twice and apologized four times.','Do you think the fireflies will come back to the falls tonight? I will go with Pete this time.','Pete says my glow is the brightest thing in the village. He has clearly never looked at the lighthouse.','If you see Pete fussing over the patch, tell him to take a break. He never listens to me.'];
+function findPattySpot(){ // a clear patch of grass between Silverveil Falls and the village
+  const L=Math.hypot(P.falls.x,P.falls.z), ux=-P.falls.x/L, uz=-P.falls.z/L;
+  for(let d=7;d<20;d+=.5)for(const side of [0,2,-2,4,-4]){const x=P.falls.x+ux*d-uz*side, z=P.falls.z+uz*d+ux*side;
+    if(groundH(x,z)>=.5&&!COL.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+1.1))return {x,z};}
+  return {x:P.falls.x+ux*10,z:P.falls.z+uz*10};
+}
+function loadPatty(){
+  if(!THREE.GLTFLoader||!window.fetch)return;
+  loadGLB('patty').then(gl=>{
+    const m=gl.scene;
+    m.traverse(o=>{if(o.isMesh){if(o.material.map)o.material.map.encoding=THREE.LinearEncoding;o.material.metalness=0;o.material.roughness=.85;o.material.needsUpdate=true;o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+    m.scale.setScalar(2.4);
+    pattyObj=new THREE.Group(); pattyObj.add(m); scene.add(pattyObj);
+    glow('#ffd24a',1.2,pattyObj,0,1.3,.45,.45); // her little heart glows
+    pattySpot=findPattySpot(); P.patty={x:pattySpot.x,z:pattySpot.z};
+    pattyCol=addCol(P.patty.x,P.patty.z,.6); INTER.push(pattyInter);
+    const mixer=new THREE.AnimationMixer(m), clip=n=>gl.animations.find(c=>c.name===n)||gl.animations[0];
+    const aIdle=mixer.clipAction(clip('idle')), aWalk=mixer.clipAction(clip('walk'));
+    aIdle.play(); aWalk.play(); aWalk.setEffectiveWeight(0);
+    PATTY={mixer,aIdle,aWalk,state:'lost',t:rand(2,4),tx:0,tz:0,walk:0,rot:Math.atan2(-P.patty.x,-P.patty.z)};
+    if(S)placePatty();
+  }).catch(()=>{PATTY=null;});
+}
+function placePatty(){ // where she belongs for this save
+  if(!PATTY||!S)return;
+  const f=S.flags||{};
+  if(f.pattyHome){P.patty.x=PATTY_HOME.x;P.patty.z=PATTY_HOME.z;PATTY.state='idle';PATTY.t=rand(1,4);}
+  else if(f.pattyFound){P.patty.x=player.x-1.5;P.patty.z=player.z-1.5;PATTY.state='follow';}
+  else{P.patty.x=pattySpot.x;P.patty.z=pattySpot.z;PATTY.state='lost';}
+}
+function talkPatty(){
+  sfx('ui'); TALKING_TO='patty';
+  const f=S.flags;
+  if(!f.pattyFound){
+    openDialog({who:'Pumpkin Patty',text:'Oh! Hello there. I followed the fireflies up to the falls and now every path looks the same. Did Pete send you? He must be worried sick.',
+      acts:[{label:'Lead the way home',primary:true,fn:()=>{f.pattyFound=true;PATTY.state='follow';sfx('quest');toast('Patty is following you. Walk her back to the village.');updateTracker();closeModal();save();}},{label:'Not yet',fn:closeModal}]});
+  }else if(!f.pattyHome){
+    openDialog({who:'Pumpkin Patty',text:'Lead on! I am right behind you. Just not too fast, these boots were made for dancing.',acts:[{label:'Let’s go',primary:true,fn:closeModal}]});
+  }else{
+    openDialog({who:'Pumpkin Patty',text:PATTY_LINES[randi(0,PATTY_LINES.length-1)],acts:[{label:'Goodbye, Patty',primary:true,fn:closeModal}]});
+  }
+}
+function npcClear(skip,x0,z0,x1,z1){
+  const d=Math.hypot(x1-x0,z1-z0), n=Math.ceil(d/.35);
+  for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n, z=z0+(z1-z0)*i/n;
+    if(groundH(x,z)<.49)return false;
+    for(const c of COL){if(c===skip)continue;if(Math.hypot(c.x-x,c.z-z)<c.r+.75)return false;}}
+  return true;
+}
+function updatePatty(dt){
+  if(!PATTY||!pattyObj)return;
+  const p=PATTY, pos=P.patty, f=S.flags, talking=modalOpen&&TALKING_TO==='patty';
+  p.t-=dt; let want=0, face=null, speed=1.2;
+  pattyObj.visible=!S.inside;
+  if(p.state==='follow'){
+    if(S.inside){want=0;}
+    else{
+      const d=Math.hypot(player.x-pos.x,player.z-pos.z);
+      if(d>24){pos.x=player.x-Math.sin(player.rot)*1.8;pos.z=player.z-Math.cos(player.rot)*1.8;} // caught up after a fast trip
+      else if(d>2.2&&!talking){speed=Math.min(8,(d-1.6)*2.4);want=1;face=Math.atan2(player.x-pos.x,player.z-pos.z);const st=Math.min(d-1.8,speed*dt);pos.x+=(player.x-pos.x)/d*st;pos.z+=(player.z-pos.z)/d*st;}
+      else face=Math.atan2(player.x-pos.x,player.z-pos.z);
+      if(Math.hypot(pos.x,pos.z)<10&&!f.pattyHome){ // home at last
+        f.pattyHome=true;p.state='idle';p.t=3;sfx('quest');banner('Patty is home');toast('Patty is back in the village. Tell Pete!');updateTracker();save();}
+    }
+  }else if(p.state==='lost'){
+    if(talking||Math.hypot(player.x-pos.x,player.z-pos.z)<4)face=Math.atan2(player.x-pos.x,player.z-pos.z);
+    else if(p.t<=0){p.t=rand(3,6);p.look=p.rot+rand(-1.2,1.2);}
+    if(face===null&&p.look!==undefined)face=p.look;
+  }else{ // at home: the same slow strolls as Pete
+    if(talking){p.state='talk';p.t=2.2;}
+    else if(p.state==='talk'&&p.t<=0){p.state='idle';p.t=rand(1.5,3);}
+    if(p.state==='idle'&&p.t<=0){
+      for(let k=0;k<10;k++){const a=Math.random()*TAU, r=Math.sqrt(Math.random())*PATTY_HOME.r, x=PATTY_HOME.x+Math.cos(a)*r, z=PATTY_HOME.z+Math.sin(a)*r;
+        if(Math.hypot(x-pos.x,z-pos.z)>2&&npcClear(pattyCol,pos.x,pos.z,x,z)){p.tx=x;p.tz=z;p.state='walk';break;}}
+      if(p.state!=='walk')p.t=rand(1,2);
+    }
+    if(p.state==='walk'){
+      const dx=p.tx-pos.x, dz=p.tz-pos.z, d=Math.hypot(dx,dz);
+      const blocked=Math.hypot(player.x-pos.x,player.z-pos.z)<1.6&&(dx*(player.x-pos.x)+dz*(player.z-pos.z))>0;
+      if(d<.15){p.state='idle';p.t=rand(4,9);}
+      else if(!blocked){want=1;face=Math.atan2(dx,dz);const st=Math.min(d,speed*dt*p.walk);pos.x+=dx/d*st;pos.z+=dz/d*st;}
+    }
+    if(p.state==='talk')face=Math.atan2(player.x-pos.x,player.z-pos.z);
+  }
+  p.walk+=(want-p.walk)*Math.min(1,dt*5);
+  if(face!==null){let da=face-p.rot;da=Math.atan2(Math.sin(da),Math.cos(da));p.rot+=da*Math.min(1,dt*5);}
+  pattyObj.rotation.y=p.rot; pattyObj.position.set(pos.x,heightAt(pos.x,pos.z),pos.z);
+  pattyCol.x=pos.x; pattyCol.z=pos.z; pattyCol.r=p.state==='follow'?0:.6; // she never blocks you while following
+  pattyInter.x=pos.x; pattyInter.z=pos.z;
+  p.aIdle.setEffectiveWeight(1-p.walk); p.aWalk.setEffectiveWeight(p.walk); p.aWalk.timeScale=p.state==='follow'?Math.max(1,Math.min(2.6,speed/1.6)):1.1;
+  p.mixer.update(dt);
 }
 /* ---------- Detailed hero (Tripo3D model, rigged and animated with Tripo motion presets) ---------- */
 let HERO=null;                       // {scene, clips, upper} once models/hero.glb has loaded
@@ -2240,7 +2339,7 @@ function climbLighthouse(){
 ================================================================= */
 function fishCount(){return Object.keys(ITEMS).filter(k=>ITEMS[k].fish).reduce((a,k)=>a+inv(k),0);}
 const GIVERS={pete:{name:'Pumpkin Pete',short:'Pete'},wick:{name:'Keeper Wick',short:'Wick'},hazel:{name:'Hazel',short:'Hazel'}};
-const CHAIN={pete:['pumpkins','fish','timber','house'],wick:['bones','light','gems'],hazel:[]};
+const CHAIN={pete:['pumpkins','patty','fish','timber','house'],wick:['bones','light','gems'],hazel:[]};
 const storyLeft=g=>CHAIN[g].some(id=>!S.qdone[id]);
 const QBY={}; QUESTS.forEach(q=>QBY[q.id]=q);
 function migrateQuests(){ // saves from before there were two quest givers kept one list in a fixed order
@@ -2260,6 +2359,7 @@ function questProgress(q){
   if(!q)return [];
   if(q.need)return Object.entries(q.need).map(([k,v])=>({label:ITEMS[k].name,have:Math.min(inv(k),v),need:v}));
   if(q.needFish)return [{label:'Any fish',have:Math.min(fishCount(),q.needFish),need:q.needFish}];
+  if(q.flag==='patty')return [{label:'Find Patty',have:S.flags.pattyFound?1:0,need:1},{label:'Walk her home',have:S.flags.pattyHome?1:0,need:1}];
   if(q.flag==='lighthouse')return [{label:'Climb the lighthouse',have:S.flags.lighthouse?1:0,need:1}];
   if(q.flag==='house2'){const up=S.house>=2;return [...Object.entries(HOUSE_UP[2]).map(([k,v])=>({label:ITEMS[k].name,have:up?v:Math.min(inv(k),v),need:v})),{label:'Upgrade at home',have:up?1:0,need:1}];}
   return [];
@@ -2468,6 +2568,7 @@ function needHint(k){
 }
 function questGoal(q){
   const need=q.need||{}, has=k=>inv(k)>=(need[k]||0);
+  if(q.flag==='patty'&&P.patty)return S.flags.pattyFound?{x:0,z:0,r:9,label:'Walk Patty to the village'}:{x:P.patty.x,z:P.patty.z,r:5,label:'Find Patty by the falls'};
   if(q.flag==='lighthouse')return {x:LH_DOOR.x,z:LH_DOOR.z,label:'Old Lighthouse'};
   if(q.flag==='house2'){
     const req=HOUSE_UP[2]||{}, short=k=>inv(k)<(req[k]||0);
@@ -2799,6 +2900,7 @@ function drawMini(dt){
   const dot=(x,y,r,c,stroke)=>{g.beginPath();g.arc(cx+x*s,cy+y*s,r,0,TAU);g.fillStyle=c;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=1.5;g.stroke();}};
   dot(P.house.x,P.house.z,5,'#ffb04a','#3a1505');
   dot(P.merchant.x,P.merchant.z,4,'#a77bff','#1a0a2a');
+  if(P.patty&&S.flags&&S.flags.pattyFound)dot(P.patty.x,P.patty.z,3.6,'#ff8fb0','#3a1505');
   dot(P.pete.x,P.pete.z,4.5,peteMark&&peteMark.visible?'#ffd27a':'#c98a55','#3a1505');
   dot(P.wick.x,P.wick.z,4.5,MARKS.wick&&MARKS.wick.visible?'#ffd27a':'#8aa0c8','#141a30');
   for(const sk of SKELS)if(sk.alive)dot(sk.x,sk.z,2.6,'#ff5a4a');
@@ -3033,7 +3135,7 @@ function applyState(){
   if(S.pick==='basic')TOOLS.pick.children[1].material=M('#8fd0ff',{metalness:.7,roughness:.3,emissive:'#1a3a5a'});
   player.x=S.pos.x; player.z=S.pos.z; player.dead=false; player.y=heightAt(player.x,player.z);
   if(perk('charm'))S.maxHp=Math.max(S.maxHp,125);
-  migrateQuests(); refreshHUD(); updateTracker();
+  migrateQuests(); placePatty(); refreshHUD(); updateTracker();
 }
 function startGame(fresh){
   applyState();
@@ -3066,6 +3168,7 @@ function loop(now){
   for(const k in MARKS)MARKS[k].position.y=3.6+Math.sin(clock*3+(k==='wick'?1.5:0))*.15;
   if(wickObj){wickObj.userData.P.body.position.y=Math.sin(clock*1.4+2)*.025;wickObj.userData.P.head.rotation.y=Math.sin(clock*.5)*.3;}
   if(PETE&&mode==='play')updatePete(dt);
+  if(PATTY&&mode==='play')updatePatty(dt);
   if(peteObj&&!PETE){peteObj.userData.P.body.position.y=Math.sin(clock*1.6)*.03;peteObj.userData.P.head.rotation.z=Math.sin(clock*.8)*.12;peteObj.userData.P.armR.rotation.z=Math.sin(clock*1.3)*.15;}
   if(hazelObj){hazelObj.userData.P.body.position.y=Math.sin(clock*1.8+1)*.03;hazelObj.userData.P.head.rotation.y=Math.sin(clock*.6)*.4;hazelObj.userData.P.armL.rotation.x=-.4+Math.sin(clock*2)*.2;}
   if(mode==='title'||mode==='titlehow'){titleA+=dt*.05;const r=52;camera.position.set(Math.cos(titleA)*r,28,Math.sin(titleA)*r);camera.lookAt(0,0,0);moon.position.set(-22,48,-30);moon.target.position.set(0,0,0);}
@@ -3140,7 +3243,7 @@ checkOrient();
 function boot(){
   try{renderIcons();}catch(e){}
   buildWorld(); makeNavObjects(); makeTools(); makeFishingGear(); slashFx=makeSlashFx(); buildCreateScene(); buildMiniBg(); resize();
-  S=null; toTitle(); loadHero(); loadTrees(); loadPete();
+  S=null; toTitle(); loadHero(); loadTrees(); loadPete(); loadPatty();
   // a stand-in player for title (hidden)
   requestAnimationFrame(loop);
 }
