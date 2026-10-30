@@ -313,6 +313,7 @@ body.talking #tracker,body.talking #prompt{visibility:hidden}
     <div class="field"><label for="pname" class="tab-label" style="align-self:flex-start">Your name</label>
       <input id="pname" maxlength="16" value="Rowan" autocomplete="off"></div>
     <p class="hint">Drag the preview to turn your character around. You can change your look later from the pause menu.</p>
+    <button class="btn" id="bSpin">⏸ Stop turning</button>
     <button class="btn" id="bRandom">Randomize look</button>
     <button class="btn primary" id="bBegin">Begin on Hallows Island</button>
     <button class="btn" id="bBack">Back</button>
@@ -3513,6 +3514,9 @@ function renderCreateOpts(){
   $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. The colors below tint her hair, skin, clothes and backpack.':'The colors below tint his hair, skin, clothes and backpack.';
   sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); if(!LOOK.pants)LOOK.pants=PANTS0; if(!LOOK.shoes)LOOK.shoes=SHOES0; sw('#oPants',LOOK_OPTS.pants,'pants'); sw('#oShoes',LOOK_OPTS.shoes,'shoes'); if(!LOOK.pack)LOOK.pack=LOOK_OPTS.pack[0]; sw('#oPack',LOOK_OPTS.pack,'pack'); $('#optPack').hidden=LOOK.model==='Classic'; ch('#oHat',LOOK_OPTS.hat.concat(createEdit&&S&&S.hats?S.hats:[]),'hat');
 }
+let cSpin=true; try{cSpin=localStorage.getItem('hallows-spin')!=='off';}catch(e){}
+function spinLabel(){$('#bSpin').textContent=cSpin?'⏸ Stop turning':'▶ Turn the preview';}
+spinLabel(); $('#bSpin').onclick=()=>{cSpin=!cSpin;try{localStorage.setItem('hallows-spin',cSpin?'on':'off');}catch(e){}spinLabel();sfx('ui');};
 $('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),pants:p(LOOK_OPTS.pants),shoes:p(LOOK_OPTS.shoes),pack:p(LOOK_OPTS.pack),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
 $('#bBack').onclick=()=>{if(createEdit){mode='play';$('#create').hidden=true;$('#hud').hidden=false;}else toTitle();};
 $('#bBegin').onclick=finishCreate;
@@ -3588,7 +3592,7 @@ function loop(now){
   if(peteObj&&!PETE){peteObj.userData.P.body.position.y=Math.sin(clock*1.6)*.03;peteObj.userData.P.head.rotation.z=Math.sin(clock*.8)*.12;peteObj.userData.P.armR.rotation.z=Math.sin(clock*1.3)*.15;}
   if(hazelObj){hazelObj.userData.P.body.position.y=Math.sin(clock*1.8+1)*.03;hazelObj.userData.P.head.rotation.y=Math.sin(clock*.6)*.4;hazelObj.userData.P.armL.rotation.x=-.4+Math.sin(clock*2)*.2;}
   if(mode==='title'||mode==='titlehow'){titleA+=dt*.05;const r=52;camera.position.set(Math.cos(titleA)*r,28,Math.sin(titleA)*r);camera.lookAt(0,0,0);moon.position.set(-22,48,-30);moon.target.position.set(0,0,0);}
-  else if(mode==='create'){if(cChar){cRot+=drag===null?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;if(cChar.userData.anim)cChar.userData.anim(dt,{});}
+  else if(mode==='create'){if(cChar){cRot+=drag===null&&cSpin?dt*.25:0;cChar.rotation.y=cRot;const Pp=cChar.userData.P;Pp.body.position.y=Math.sin(clock*2)*.015;Pp.armL.rotation.z=-.08;Pp.armR.rotation.z=.08;if(cChar.userData.anim)cChar.userData.anim(dt,{});}
     const narrow=innerWidth<760;cCam.position.set(0,1.5,narrow?6.4:5.6);cCam.lookAt(0,1.0,0);}
   else if(mode==='play'){
     if(!modalOpen&&!portrait){updatePlayer(dt);updateSkels(dt);updateDungeon(dt);updateCombatFx(dt);updateFishing(dt);updatePlacing();}
