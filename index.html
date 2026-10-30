@@ -54,7 +54,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--glow);outline-o
 .vols{display:flex;flex-direction:column;gap:8px;padding:8px 0}
 .vol{display:grid;grid-template-columns:100px 1fr 44px;align-items:center;gap:10px;font-weight:800;font-size:14px}
 .vol b{font-size:13px;color:var(--muted);text-align:right}
-.vol input{width:100%;accent-color:#ff9a3c;height:28px;touch-action:pan-x}
+.vol input{width:100%;accent-color:#ff9a3c;height:30px;touch-action:pan-y}
 #title .musicbtn{position:absolute;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));pointer-events:auto;background:#1b1633cc;color:var(--text);border:1px solid #ffffff22;border-radius:999px;padding:8px 14px;font:800 13px var(--f-body);cursor:pointer}
 #title{display:flex;flex-direction:column;justify-content:flex-start;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));gap:20px;background:radial-gradient(ellipse at 20% 30%,#0000 0,#0a081a88 70%)}
 .logo{line-height:.85;margin:0}
@@ -157,8 +157,8 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 #fade.on{opacity:1}
 
 /* ---------- modals ---------- */
-#modal{pointer-events:auto;display:grid;place-items:center;background:#05031088;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.win{width:min(640px,100%);max-height:calc(100% - 20px);display:flex;flex-direction:column;position:relative;padding:30px 16px 16px}
+#modal{pointer-events:auto;display:grid;grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,1fr);place-items:center;background:#05031088;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.win{width:min(640px,100%);max-height:100%;display:flex;flex-direction:column;position:relative;padding:30px 16px 16px}
 .win > .tab-label{position:absolute;top:-16px;left:18px}
 .win .x{position:absolute;top:8px;right:8px;width:34px;height:34px;padding:0;border-radius:8px}
 .win .body{overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
@@ -269,6 +269,25 @@ body.talking #tracker,body.talking #prompt{visibility:hidden}
 #toasts{top:max(10px,calc(env(safe-area-inset-top,0px) + 10px));width:min(320px,max(220px,calc(100vw - 560px)))}
 .touch .mb kbd,.touch .sk kbd{display:none}
 .sk.down{transform:scale(.92);border-color:var(--ember);box-shadow:0 0 14px #ff963688}
+/* ---------- touch scrolling: the page itself never scrolls, but menus do ---------- */
+.win .body,#create .panel,#create,.dlg,.dlg > div:first-child{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.win .body{position:relative;scrollbar-width:thin;scrollbar-color:#ffd27a66 transparent}
+.win .body::-webkit-scrollbar{width:6px}.win .body::-webkit-scrollbar-thumb{background:#ffd27a55;border-radius:3px}
+.win .more{position:sticky;bottom:-1px;margin-top:-34px;height:34px;flex:none;pointer-events:none;background:linear-gradient(180deg,transparent,#1b1424 85%);display:flex;align-items:flex-end;justify-content:center;font-size:12px;font-weight:800;color:var(--glow);letter-spacing:.06em;opacity:0;transition:opacity .2s}
+.win .body.scrolly .more{opacity:1}
+.touch .win .x{width:40px;height:40px;top:6px;right:6px}
+body.menuopen #stick,body.menuopen #skills,body.menuopen #prompt{visibility:hidden}
+.touch .tabs button{padding:9px 14px}
+@media (max-height:500px){
+  .dlg{grid-template-columns:1fr auto;max-height:calc(100vh - 20px);overflow:auto;align-self:end}
+  .dlg .acts{min-width:150px;gap:5px}
+  .dlg .acts .btn{padding:7px 10px;font-size:13px}
+  #modal.side .win{width:min(560px,62vw)}
+  #modal.side .dlg{width:min(600px,66vw)}
+  .row{padding:6px 8px;gap:8px}
+  .row .btn{padding:6px 10px;font-size:13px}
+  #modal{padding-top:max(22px,env(safe-area-inset-top,0px));padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -3188,8 +3207,10 @@ function nearHome(){return Math.hypot(player.x-P.yard.x,player.z-P.yard.z);}
 ================================================================= */
 let modalOpen=false, modalKind=null;
 const modal=$('#modal');
-function openModal(html,kind){modal.style.placeItems='';modal.classList.toggle('side',!!TALK);modal.innerHTML=html;modal.hidden=false;modalOpen=true;modalKind=kind;const x=modal.querySelector('.x');if(x)x.onclick=closeModal;keys={};}
-function closeModal(){TALK=null;TALKING_TO=null;modal.classList.remove('side');modal.hidden=true;modal.innerHTML='';modalOpen=false;modalKind=null;if(typeof updateGuide==='function'&&S)setTimeout(updateGuide,0);}
+function openModal(html,kind){modal.style.placeItems='';modal.classList.toggle('side',!!TALK);modal.innerHTML=html;modal.hidden=false;modalOpen=true;modalKind=kind;document.body.classList.add('menuopen');const x=modal.querySelector('.x');if(x)x.onclick=closeModal;keys={};
+  const b=modal.querySelector('.win .body'); if(b){const m=document.createElement('div');m.className='more';m.textContent='▾ more below';b.appendChild(m);
+    const chk=()=>b.classList.toggle('scrolly',b.scrollHeight-b.scrollTop-b.clientHeight>8); b.addEventListener('scroll',chk,{passive:true}); requestAnimationFrame(chk); setTimeout(chk,250);}}
+function closeModal(){document.body.classList.remove('menuopen');TALK=null;TALKING_TO=null;modal.classList.remove('side');modal.hidden=true;modal.innerHTML='';modalOpen=false;modalKind=null;if(typeof updateGuide==='function'&&S)setTimeout(updateGuide,0);}
 modal.addEventListener('pointerdown',e=>{if(e.target===modal&&modalKind!=='pause')closeModal();});
 function win(label,body,extraCls=''){return `<div class="panel win ${extraCls}" role="dialog" aria-label="${esc(label)}"><span class="tab-label">${esc(label)}</span><button class="btn x" aria-label="Close">✕</button><div class="body">${body}</div></div>`;}
 function openDialog(o){
