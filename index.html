@@ -564,6 +564,8 @@ const DECOS={
   shipbottle:{name:'Ship in a Bottle',tab:'Decor',where:'in',cost:{},unique:true,r:.45},
   cat:{name:'Black Cat Statue',tab:'Decorations',tabIn:'Decor',where:'both',cost:{},unique:true,r:.45},
   crystalball:{name:'Crystal Ball',tab:'Decor',where:'in',cost:{},unique:true,r:.4},
+  fireflyjar:{name:'Firefly Jar',tab:'Decorations',tabIn:'Lighting',where:'both',cost:{},unique:true,r:.35},
+  heartpump:{name:'Heart Pumpkin',tab:'Decorations',tabIn:'Decor',where:'both',cost:{},unique:true,r:.6},
 };
 const BUILD_TABS=['House','Decorations','Furniture','Farming','Other'];
 const IN_TABS=['House','Furniture','Decor','Lighting'];
@@ -790,6 +792,11 @@ function addHat(L,head,opt){
     mk(Sph(.1,8,6),M('#e9d6b4'),0,.47,0,head);
   }else if(L.hat==='Pumpkin'||L.hat==='Golden Pumpkin'){
     const ph=buildPumpkin(.26,false,L.hat==='Pumpkin'?'#e9781f':'#d9a72a'); ph.position.y=.26; ph.rotation.z=.15; head.add(ph);
+  }else if(L.hat==='Rose Crown'){
+    const cy=opt&&opt.hero?.36:.16;
+    const ring=mk(new THREE.TorusGeometry(.34,.05,6,20),M('#6d4c33'),0,cy,0,head); ring.rotation.x=Math.PI/2;
+    for(let k=0;k<9;k++){const a=k/9*TAU;const lf=mk(Cone(.08,.16,4),M(['#c9682a','#d9a03a','#a8432a'][k%3],{flatShading:true}),Math.cos(a)*.34,cy+.05,Math.sin(a)*.34,head);lf.rotation.set(Math.sin(a)*.5,0,-Math.cos(a)*.5);}
+    mk(Sph(.09,10,8),M('#c0283a'),.12,cy+.08,.31,head); mk(Sph(.06,8,6),M('#8a1a28'),.12,cy+.13,.33,head);
   }else if(L.hat==='Starry Hat'){
     mk(Cyl(.62,.62,.04,24),M('#3e2466'),0,.28,0,head);
     const cn=mk(Cone(.33,.9,16),M('#3e2466'),0,.72,-.02,head); cn.rotation.set(-.14,0,-.18);
@@ -857,7 +864,7 @@ function updatePete(dt){
 /* ---------- Pumpkin Patty: Pete's sweetheart. Lost by the falls until you walk her home, then she strolls the plaza too ---------- */
 const PATTY_HOME={x:-1,z:-1.5,r:6.5};
 let PATTY=null, pattyObj=null, pattyCol=null, pattySpot=null;
-const pattyInter={x:-9999,z:-9999,r:2.6,label:()=>PATTY?'Talk to Patty':null,act:()=>talkPatty()};
+const pattyInter={x:-9999,z:-9999,r:2.6,label:()=>{if(!PATTY)return null;const q=S&&S.qact.patty?giverQuest('patty'):null;return q&&questReady(q)?'Talk to Patty · favor ready':'Talk to Patty';},act:()=>talkPatty()};
 const PATTY_LINES=['Pete hums when he thinks nobody is listening. It is mostly off-key. I adore it.','We met at the harvest dance. He stepped on my vines twice and apologized four times.','Do you think the fireflies will come back to the falls tonight? I will go with Pete this time.','Pete says my glow is the brightest thing in the village. He has clearly never looked at the lighthouse.','If you see Pete fussing over the patch, tell him to take a break. He never listens to me.'];
 function findPattySpot(){ // a clear patch of grass between Silverveil Falls and the village
   const L=Math.hypot(P.falls.x,P.falls.z), ux=-P.falls.x/L, uz=-P.falls.z/L;
@@ -898,7 +905,10 @@ function talkPatty(){
   }else if(!f.pattyHome){
     openDialog({who:'Pumpkin Patty',text:'Lead on! I am right behind you. Just not too fast, these boots were made for dancing.',acts:[{label:'Let’s go',primary:true,fn:closeModal}]});
   }else{
-    openDialog({who:'Pumpkin Patty',text:PATTY_LINES[randi(0,PATTY_LINES.length-1)],acts:[{label:'Goodbye, Patty',primary:true,fn:closeModal}]});
+    const fq=S.qact.patty?giverQuest('patty'):null;
+    openDialog({who:'Pumpkin Patty '+heartsHTML('patty'),text:PATTY_LINES[randi(0,PATTY_LINES.length-1)],acts:[
+      {label:fq?(questReady(fq)?'Hand in: '+fq.title:'Current favor'):'Ask for a favor',primary:true,fn:()=>talkTo('patty')},
+      {label:'Friendship ♥',fn:()=>openFriend('patty')},{label:'Goodbye, Patty',fn:closeModal}]});
   }
 }
 function npcClear(skip,x0,z0,x1,z1){
@@ -1118,7 +1128,7 @@ function buildHero(L,girl){
   const head=bones.Head;
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
   if(head&&L.hat&&L.hat!=='None'){
-    const hg=new THREE.Group(); addHat(L,hg,{}); hg.rotation.y=K.hat[4]; const pum=/Pumpkin/.test(L.hat); hg.scale.setScalar(pum?.5:.44);
+    const hg=new THREE.Group(); addHat(L,hg,{hero:true}); hg.rotation.y=K.hat[4]; const pum=/Pumpkin/.test(L.hat); hg.scale.setScalar(pum?.5:.44);
     attachRaw(hg,K.hat[0],pum?K.hat[3]:K.hat[1],K.hat[2]);
   }
   // the hand: tools attach here exactly as they do on the classic body
@@ -1244,6 +1254,9 @@ function buildDeco(id){
       const tl=mk(new THREE.TorusGeometry(.22,.035,6,14,Math.PI*1.2),bk,-.05,.22,-.22,g);tl.rotation.set(0,Math.PI/2,.3);break;}
     case 'crystalball':{mk(Cyl(.2,.26,.12,12),M('#c9a14a',{metalness:.6,roughness:.35}),0,.06,0,g);for(let k=0;k<3;k++){const a=k/3*TAU;const c=mk(Cyl(.025,.025,.2,5),M('#c9a14a',{metalness:.6}),Math.cos(a)*.14,.2,Math.sin(a)*.14,g);c.rotation.z=.3;}
       const ball=mk(Sph(.24,18,14),new THREE.MeshStandardMaterial({color:'#b07bff',emissive:'#5a2a9a',emissiveIntensity:.8,transparent:true,opacity:.75,roughness:.05}),0,.48,0,g);ball.castShadow=false;glow('#c49bff',2.2,g,0,.48,0,.6);break;}
+    case 'fireflyjar':{mk(Cyl(.24,.26,.06,12),M('#6b4a2e'),0,.03,0,g);const jar=mk(Cyl(.22,.22,.55,14),new THREE.MeshStandardMaterial({color:'#d8f0d0',transparent:true,opacity:.28,roughness:.1}),0,.33,0,g);jar.castShadow=false;
+      mk(Cyl(.18,.2,.08,12),M('#8a6038'),0,.64,0,g);[[.08,.25,.05],[-.07,.4,-.04],[.02,.5,.09],[-.1,.2,.08],[.1,.45,-.08]].forEach(([x,y,z])=>{const f=mk(Sph(.03,6,5),EM('#e8ff7a'),x,y,z,g);f.castShadow=false;});glow('#d8ff6a',2,g,0,.4,0,.7);g.userData.flies=true;break;}
+    case 'heartpump':{const p=buildPumpkin(.45,false,'#e9781f');g.add(p);const hm=EM('#ffcf5a');for(const k of [-1,1]){const h=mk(Sph(.075,10,8),hm,k*.065,.5,.4,g);h.castShadow=false;}const tip=mk(Cone(.11,.15,4),hm,0,.4,.41,g);tip.rotation.x=Math.PI;tip.castShadow=false;glow('#ffb84a',2,g,0,.45,.3,.6);break;}
     case 'candles':{mk(Cyl(.3,.32,.05,12),M('#6b6f78',{metalness:.5}),0,.03,0,g);[[0,.5,0],[.15,.35,.06],[-.13,.28,.08]].forEach(([x,h,z])=>{mk(Cyl(.06,.06,h,8),M('#efe6cf'),x,.05+h/2,z,g);const f=mk(Cone(.035,.1,6),EM('#ffc24a'),x,.12+h,z,g);f.castShadow=false;});glow('#ffb04a',1.8,g,0,.55,0,.75);break;}
   }
   return g;
@@ -1572,7 +1585,9 @@ function buildGraveyard(){
   const gateA=Math.atan2(-c.z,-c.x);
   for(let i=0;i<34;i++){const a=i/34*TAU;let da=Math.abs(((a-gateA)%TAU+TAU+Math.PI)%TAU-Math.PI);if(da<.2)continue;const x=c.x+Math.cos(a)*12,z=c.z+Math.sin(a)*12;
     const g=new THREE.Group();const ir=M('#24212a',{metalness:.5,roughness:.5});mk(Box(.1,1.5,.1),ir,0,.75,0,g);mk(Cone(.08,.22,4),ir,0,1.6,0,g);mk(Box(.1,.06,2.3),ir,0,1.25,0,g);mk(Box(.1,.06,2.3),ir,0,.35,0,g);for(let k=-2;k<=2;k++){if(!k)continue;mk(Box(.05,1.2,.05),ir,0,.7,k*.44,g);}
-    g.position.set(x,groundH(x,z),z);g.rotation.y=-a;scene.add(g);addCol(x,z,.55);}
+    g.position.set(x,groundH(x,z),z);g.rotation.y=-a;scene.add(g);}
+  // a solid ring of small colliders under the fence, so there are no gaps to slip through at an angle
+  for(let i=0,n=Math.ceil(TAU*12/.55);i<n;i++){const a=i/n*TAU;const da=Math.abs(((a-gateA)%TAU+TAU+Math.PI)%TAU-Math.PI);if(da<.2)continue;addCol(c.x+Math.cos(a)*12,c.z+Math.sin(a)*12,.4);}
   for(const s of [-1,1]){const a=gateA+s*.24;const x=c.x+Math.cos(a)*12,z=c.z+Math.sin(a)*12;mk(Box(.6,2.4,.6),M('#55525c',{flatShading:true}),x,1.7,z,scene);const l=buildLantern(false,'#9fffb0');l.position.set(x,3.2,z);scene.add(l);addCol(x,z,.5);}
   _seed=99;
   for(let i=0;i<20;i++){const a=sr(0,TAU),d=sr(3,10.5);const x=c.x+Math.cos(a)*d,z=c.z+Math.sin(a)*d;if(Math.hypot(x-c.x-Math.cos(gateA)*8,z-c.z-Math.sin(gateA)*8)<3)continue;const gr=buildGrave(srand()<.3);gr.position.set(x,.5,z);gr.rotation.set(sr(-.1,.1),sr(-.4,.4)+Math.PI,sr(-.12,.12));scene.add(gr);addCol(x,z,.45);}
@@ -2365,8 +2380,8 @@ function climbLighthouse(){
    Quests
 ================================================================= */
 function fishCount(){return Object.keys(ITEMS).filter(k=>ITEMS[k].fish).reduce((a,k)=>a+inv(k),0);}
-const GIVERS={pete:{name:'Pumpkin Pete',short:'Pete'},wick:{name:'Keeper Wick',short:'Wick'},hazel:{name:'Hazel',short:'Hazel'}};
-const CHAIN={pete:['pumpkins','patty','fish','timber','house'],wick:['bones','light','gems'],hazel:[]};
+const GIVERS={pete:{name:'Pumpkin Pete',short:'Pete'},wick:{name:'Keeper Wick',short:'Wick'},hazel:{name:'Hazel',short:'Hazel'},patty:{name:'Pumpkin Patty',short:'Patty'}};
+const CHAIN={pete:['pumpkins','patty','fish','timber','house'],wick:['bones','light','gems'],hazel:[],patty:[]};
 const storyLeft=g=>CHAIN[g].some(id=>!S.qdone[id]);
 const QBY={}; QUESTS.forEach(q=>QBY[q.id]=q);
 function migrateQuests(){ // saves from before there were two quest givers kept one list in a fixed order
@@ -2451,6 +2466,22 @@ const FRIENDS={
       {name:'Crystal Ball',desc:'The mist inside swirls when no one is looking.',deco:'crystalball'},
       {name:'Starry Hat',desc:'A violet witch hat stitched with silver stars.',hat:'Starry Hat'}]},
 };
+
+FRIENDS.patty={loves:['ghostcarp','amethyst'],likes:['pumpkin','seeds','moonfish','perch'],
+  hi:['Oh, it’s you! Pete talks about you all the time.','The fireflies came back last night. I watched them from the plaza this time.','Have you come to dance? No? Next time, then.'],
+  favors:[
+    {k:'floor',item:'wood',n:[4,6],t:'I’m building a little dance floor for the harvest dance. Could you bring me {n} wood?'},
+    {k:'garden',item:'seeds',n:[2,3],t:'I want to plant pumpkins by Pete’s door as a surprise. {n} pumpkin seeds, please, and not a word to him!'},
+    {k:'pie',item:'pumpkin',n:[3,4],t:'Pete’s birthday is coming up and he loves pumpkin pie more than me, I think. {n} pumpkins?'},
+    {k:'ring',item:'amethyst',n:[1,2],t:'I’m making Pete a ring from a vine and a gem. Could you find me {n} amethyst?'},
+    {k:'picnic',item:'moonfish',n:[2,3],t:'A moonlit picnic by the falls, just the two of us. {n} moonfish would make it perfect.'},
+    {k:'carp',item:'ghostcarp',n:[1,1],t:'The ghost carp at the falls glow like little lanterns. Could you catch me {n} for the pond I’m planning?'}],
+  rewards:[
+    {name:'Firefly Jar',desc:'A jar of the fireflies Patty chased to the falls.',deco:'fireflyjar'},
+    {name:'Dancing Boots',desc:'You walk and run 8% faster.',perk:'boots'},
+    {name:'Heart Pumpkin',desc:'A pumpkin carved with a glowing heart, Patty’s favorite.',deco:'heartpump'},
+    {name:'Picnic Basket',desc:'Moon Tonics restore 100 health instead of 60.',perk:'basket'},
+    {name:'Rose Crown',desc:'A crown of autumn leaves with one red rose.',hat:'Rose Crown'}]};
 function rel(g){S.rel=S.rel||{};return S.rel[g]||(S.rel[g]={pts:0,lvl:0,gt:-1e9,last:[]});}
 function perk(p){return !!(S&&S.perks&&S.perks[p]);}
 function priceOf(id){return Math.round(ITEMS[id].price*(perk('discount')?.9:1));}
@@ -2491,7 +2522,7 @@ function openFriend(g,msg){
   if(wait>0)body+=`<p class="hint">${esc(G.short)} already got a gift. Try again in about ${wait} minute${wait>1?'s':''}.</p>`;
   else body+=gifts.length?`<h3 class="sub">Give a gift</h3><div class="bag">${gifts.map(k=>{const p=giftPoints(g,k);return `<button class="slot" data-gift="${k}" aria-label="Give ${esc(ITEMS[k].name)}"><img src="${ICON[k]}" alt=""><b>${inv(k)}</b>${p>5?`<em>${p>12?'♥♥':'♥'}</em>`:''}</button>`;}).join('')}</div>`:`<p class="hint">Your bag is empty, so there is nothing to give yet.</p>`;
   openModal(win('Friendship',body+`<div class="acts" style="margin-top:8px"><button class="btn" id="fBack">Back</button></div>`),'friend');
-  $('#fBack').onclick=()=>{if(g==='hazel')openShop('friend');else talkTo(g);};
+  $('#fBack').onclick=()=>{if(g==='hazel')openShop('friend');else if(g==='patty')talkPatty();else talkTo(g);};
   modal.querySelectorAll('[data-gift]').forEach(b=>b.onclick=()=>{const k=b.dataset.gift;if(!inv(k))return;take(k,1);R.gt=S.t;const p=giftPoints(g,k);
     const line=p>12?`“${ITEMS[k].name}! You remembered. Thank you!”`:p>5?`“Oh, how kind. I like these.”`:`“Thank you. I’ll find a use for it.”`;
     sfx(p>12?'catch':'pick');addFriend(g,p);updateTracker();openFriend(g,line);});
@@ -2788,7 +2819,7 @@ function openBag(sel){
     (ids.length?`<div class="bag">${ids.map(k=>`<button class="slot ${k===sel?'sel':''}" data-k="${k}" aria-label="${esc(ITEMS[k].name)}"><img src="${ICON[k]}" alt=""><b>${inv(k)}</b></button>`).join('')}</div>`:'<p class="hint">Your bag is empty. Go catch, mine and harvest something!</p>')+det+tools;
   openModal(win('Bag',body),'bag'); setTimeout(updateGuide,0);
   modal.querySelectorAll('.slot').forEach(b=>b.onclick=()=>openBag(b.dataset.k));
-  const ut=$('#useTonic'); if(ut)ut.onclick=()=>{if(S.hp>=S.maxHp){toast('Already at full health');return;}take('tonic',1);(S.tips||(S.tips={})).tonic=true;S.hp=Math.min(S.maxHp,S.hp+60);sfx('magic');burst(player.x,1.2,player.z,'#9ad7ff',16,2,.35,.8,1);refreshHUD();openBag('tonic');};
+  const ut=$('#useTonic'); if(ut)ut.onclick=()=>{if(S.hp>=S.maxHp){toast('Already at full health');return;}take('tonic',1);(S.tips||(S.tips={})).tonic=true;S.hp=Math.min(S.maxHp,S.hp+(perk('basket')?100:60));sfx('magic');burst(player.x,1.2,player.z,'#9ad7ff',16,2,.35,.8,1);refreshHUD();openBag('tonic');};
 }
 // ---- quest log
 function openQuests(){
@@ -2799,7 +2830,7 @@ function openQuests(){
     if(S.qact[g]&&q){body+=`<div class="q"><b>${esc(q.title)}</b> <span class="muted" style="font-size:12px">${esc(G.name.toUpperCase())}${g===S.track?' · TRACKED':''}</span><p>${esc(q.text)}</p><p>${questProgress(q).map(p=>`${esc(p.label)}: <b style="color:${p.have>=p.need?'var(--good)':'var(--text)'}">${p.have}/${p.need}</b>`).join(' · ')}</p><p>${esc(q.hint||'')}</p>${g!==S.track?`<button class="btn" data-track="${g}">Track this quest</button>`:''}</div>`;}
     else if(q)body+=`<div class="q"><b>${esc(G.name)} has a new quest</b><p>Find ${esc(G.short)} in the village plaza. The arrow shows the way.</p></div>`;
   }
-  body+=`<h3 class="sub">Friendship</h3>`+Object.keys(GIVERS).map(g=>{const R=rel(g),nx=FRIENDS[g].rewards[R.lvl];return `<div class="q fr"><b>${esc(GIVERS[g].name)}</b> ${heartsHTML(g)}<p>${nx?'Next: '+esc(nx.name)+' at '+HEART_AT[R.lvl+1]+' friendship ('+R.pts+' now)':'Best friends'}</p><button class="btn" data-fr="${g}">Gifts and rewards</button></div>`;}).join('')+`<p class="hint">Favors and gifts are the only things that repeat. Talk to a villager${'’'}s Friendship option, or visit Hazel’s Friendship tab.</p>`;
+  body+=`<h3 class="sub">Friendship</h3>`+Object.keys(GIVERS).filter(g=>g!=='patty'||S.flags.pattyHome).map(g=>{const R=rel(g),nx=FRIENDS[g].rewards[R.lvl];return `<div class="q fr"><b>${esc(GIVERS[g].name)}</b> ${heartsHTML(g)}<p>${nx?'Next: '+esc(nx.name)+' at '+HEART_AT[R.lvl+1]+' friendship ('+R.pts+' now)':'Best friends'}</p><button class="btn" data-fr="${g}">Gifts and rewards</button></div>`;}).join('')+`<p class="hint">Favors and gifts are the only things that repeat. Talk to a villager${'’'}s Friendship option, or visit Hazel’s Friendship tab.</p>`;
   const done=QUESTS.filter(q=>S.qdone[q.id]);
   if(done.length||S.oddDone)body+=`<h3 style="margin:6px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;color:var(--muted)">COMPLETED</h3><div class="ql">${done.map(d=>`<div class="q done"><b>${esc(d.title)}</b> <span class="muted" style="font-size:12px">${esc(GIVERS[d.giver].short)}</span></div>`).join('')}${S.oddDone?`<div class="q done"><b>Favors done: ${S.oddDone}</b></div>`:''}</div>`;
   const disc=REGIONS.filter(r=>S.disc[r.id]).length;
@@ -3005,7 +3036,7 @@ function findNearest(){
   if(placing||fish)return;
   for(const it of INTER){const d=Math.hypot(it.x-player.x,it.z-player.z);if(d<it.r&&d<best){const l=it.label();if(l){best=d;nearest={it,l};}}}
   for(const sp of SPOTS){const d=Math.hypot(sp.x-player.x,sp.z-player.z);if(d<2.2&&d<best){best=d;nearest={it:{x:sp.x,z:sp.z,act:()=>startFishing(sp)},l:'Fish at '+sp.name+(inv('bait')?` (bait ×${inv('bait')})`:'')};}}
-  for(const g of Object.keys(GIVERS)){if(g==='hazel')continue;if(Math.hypot(P[g].x-player.x,P[g].z-player.z)<2.8){nearest={it:{x:P[g].x,z:P[g].z,act:()=>talkTo(g)},l:'Talk to '+GIVERS[g].name};}}
+  for(const g of Object.keys(GIVERS)){if(g==='hazel'||g==='patty')continue;if(Math.hypot(P[g].x-player.x,P[g].z-player.z)<2.8){nearest={it:{x:P[g].x,z:P[g].z,act:()=>talkTo(g)},l:'Talk to '+GIVERS[g].name};}}
 }
 function interact(){
   if(mode!=='play'||modalOpen||player.dead)return;
@@ -3038,7 +3069,7 @@ function updatePlayer(dt){
   const len=Math.hypot(ix,iz);
   if(fish&&len>.2&&fish.phase!=='done')cancelFishing();
   const run=keys.shift||Math.hypot(joy.x,joy.z)>.92; player.running=run;
-  const spd=(run?7.6:5.4)*(player.swing>0?.55:1);
+  const spd=(run?7.6:5.4)*(player.swing>0?.55:1)*(perk('boots')?1.08:1);
   if(len>.15){ix/=Math.max(1,len);iz/=Math.max(1,len);tryMove(player.x+ix*spd*dt,player.z+iz*spd*dt);player.rot=angLerp(player.rot,Math.atan2(ix,iz),dt*12);player.walkT+=dt*spd*1.55;player.moving=Math.min(1,player.moving+dt*6);}
   else player.moving=Math.max(0,player.moving-dt*6);
   player.y=lerp(player.y,heightAt(player.x,player.z),Math.min(1,dt*14));
