@@ -1290,7 +1290,7 @@ let HERO=null;                       // {scene, clips, upper} once models/hero.g
 const HERO_SCALE=2.05;
 // what each generated part is, by Tripo part number
 const HERO_ROLE={0:'hair',1:'pack',2:'skin',3:'outfit',4:'pants',5:'boot',6:'boot',7:'outfit',8:'skin',9:'outfit',10:'skin',11:'outfit',12:'hair',13:'hair'};
-const LOWER_BONES=/^(Root|BoneRoot|Hip|Pelvis|[LR]_(Thigh|Calf|Foot|Toe|Knee))/;
+const LOWER_BONES=/^(Root|BoneRoot|Hip|Pelvis|[LR]_(Thigh|Calf|Foot|Toe|Knee)|(Left|Right)(UpLeg|Leg|Foot|ToeBase|Toe_End))/;
 let HEROINE=null;                    // the girl, from models/heroine.glb (her own idle/walk/run, actions retargeted from the boy)
 const MODEL_LABEL={Detailed:'Boy',Girl:'Girl',Classic:'Classic'};
 // what each part of the girl is, by Tripo part number; her colors come from the model and are tinted
@@ -1341,9 +1341,10 @@ function makeCharacter(L){if(L.model==='Girl')return HEROINE?buildHero(L,true):H
 function heroAct(name,o){const u=player.model&&player.model.userData;if(u&&u.act)u.act(name,o||{});}
 function heroStop(){const u=player.model&&player.model.userData;if(u&&u.stopAct)u.stopAct();}
 const HERO_KIND={
-  boy:{rot:-Math.PI/2,walk:2.0,run:1.9,squash:.70,hat:[.02,.71,0,.84,Math.PI/2]},
+  // the boy is the player's own Tripo model: Mixamo bones, a textured part for each piece, tinted by the creator colors
+  boy:{rot:0,walk:2.9,run:2.0,squash:.74,hat:[0,.72,.04,.85,0],textured:true,head:'Head',hand:'RightHand',fore:'RightForeArm'},
   // the girl faces +z in her own space; her walk clip is a slow stroll, so it plays faster
-  girl:{rot:0,walk:2.9,run:2.1,squash:.70,hat:[0,.71,.04,.84,0]},
+  girl:{rot:0,walk:2.9,run:2.1,squash:.70,hat:[0,.71,.04,.84,0],head:'Head',hand:'R_Hand',fore:'R_Forearm'},
 };
 function tintGirl(o,role,L){
   const want=new THREE.Color({hair:L.hair,outfit:L.outfit,skin:L.skin,face:L.skin,pants:L.pants||PANTS0,boot:L.shoes||SHOES0,pack:L.pack||'#a5523a'}[role]);
@@ -1357,6 +1358,15 @@ function tintGirl(o,role,L){
   }
   return mat;
 }
+function tintTextured(o,role,L){ // gray parts take the chosen color; skin keeps its painted face and shifts tone
+  const want=new THREE.Color({hair:L.hair,outfit:L.outfit,skin:L.skin,face:L.skin,pants:L.pants||PANTS0,boot:L.shoes||SHOES0,pack:L.pack||'#a5523a'}[role]||'#888');
+  const map=o.material.map; if(map)map.encoding=THREE.LinearEncoding;
+  const mat=new THREE.MeshStandardMaterial({map,roughness:role==='hair'?.6:.85,skinning:true});
+  const m=o.userData.mean;
+  if(m)mat.color.setRGB(Math.min(1.8,want.r/Math.max(.05,m[0])),Math.min(1.8,want.g/Math.max(.05,m[1])),Math.min(1.8,want.b/Math.max(.05,m[2])));
+  else mat.color.copy(want).multiplyScalar(1.05);
+  return mat;
+}
 function buildHero(L,girl){
   const K=girl?HERO_KIND.girl:HERO_KIND.boy, D=girl?HEROINE:HERO;
   const g=new THREE.Group(), fix=new THREE.Group();
@@ -1365,7 +1375,11 @@ function buildHero(L,girl){
   const bones={}, hatted=COVER_HATS.includes(L.hat);
   src.traverse(o=>{
     if(o.isBone)bones[o.name]=o;
-    if(o.isMesh&&girl){
+    if(o.isMesh&&K.textured&&o.userData.role){
+      const role=o.userData.role; o.material=tintTextured(o,role,L);
+      if(role==='hair'&&hatted){o.geometry=o.geometry.clone();const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>K.squash)p.setY(i,K.squash+(y-K.squash)*.45);}p.needsUpdate=true;o.geometry.computeBoundingSphere();}
+      o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
+    }else if(o.isMesh&&girl){
       const role=GIRL_ROLE[+o.name.replace(/\D+/g,'')]||'pack';
       if(o.geometry.userData.lum)o.material=tintGirl(o,role,L); else o.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,skinning:true});
       if(role==='hair'&&hatted){o.geometry=o.geometry.clone();const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>K.squash)p.setY(i,K.squash+(y-K.squash)*.45);}p.needsUpdate=true;o.geometry.computeBoundingSphere();}
@@ -1395,7 +1409,7 @@ function buildHero(L,girl){
   base.walk.timeScale=K.walk; base.run.timeScale=K.run;
   let one=null, runW=0;
   // the boy's Tripo animations keep his palms-forward hands; turn his forearms so the palms face the legs (the girl's already do)
-  const armFix=(girl?[]:[['L_Forearm',1.4],['R_Forearm',-1.4]]).map(([n,a])=>{const b=bones[n];if(!b)return null;const c=b.children.find(o=>o.isBone);const ax=c?c.position.clone().normalize():new THREE.Vector3(0,1,0);return {b,rest:b.quaternion.clone(),q:new THREE.Quaternion().setFromAxisAngle(ax,a)};}).filter(Boolean);
+  const armFix=(girl||K.textured?[]:[['L_Forearm',1.4],['R_Forearm',-1.4]]).map(([n,a])=>{const b=bones[n];if(!b)return null;const c=b.children.find(o=>o.isBone);const ax=c?c.position.clone().normalize():new THREE.Vector3(0,1,0);return {b,rest:b.quaternion.clone(),q:new THREE.Quaternion().setFromAxisAngle(ax,a)};}).filter(Boolean);
   const OVER=12; // action weight: overrides the loops on the bones it animates
   const act=(name,o)=>{
     const clip=(o.upper?D.upper:D.clips)[name]; if(!clip)return;
@@ -1422,7 +1436,7 @@ function buildHero(L,girl){
   };
   anim(0,{}); g.updateMatrixWorld(true);
   // hat, built in the model's own space then handed to the head bone
-  const head=bones.Head;
+  const head=bones[K.head||'Head'];
   const attachRaw=(obj,x,y,z)=>{obj.position.set(x,y,z);src.add(obj);obj.updateMatrixWorld(true);head.attach(obj);};
   if(head&&L.hat&&L.hat!=='None'){
     const hg=new THREE.Group(); addHat(L,hg,{hero:true}); hg.rotation.y=K.hat[4]; const pum=/Pumpkin/.test(L.hat); hg.scale.setScalar(pum?.5:.44);
@@ -1430,7 +1444,7 @@ function buildHero(L,girl){
   }
   // the hand: tools attach here exactly as they do on the classic body
   const Pp={legL:new THREE.Object3D(),legR:new THREE.Object3D(),armL:new THREE.Object3D(),armR:new THREE.Object3D(),body:new THREE.Object3D(),head:new THREE.Object3D()};
-  const hb=bones.R_Hand, fa=bones.R_Forearm;
+  const hb=bones[K.hand||'R_Hand'], fa=bones[K.fore||'R_Forearm'];
   Pp.hand=new THREE.Object3D(); g.add(Pp.hand);
   if(hb){const hp=hb.getWorldPosition(new THREE.Vector3()); if(fa){const d=hp.clone().sub(fa.getWorldPosition(new THREE.Vector3())).normalize();hp.addScaledVector(d,.1);} Pp.hand.position.copy(hp); Pp.hand.updateMatrixWorld(true); hb.attach(Pp.hand);}
   g.userData={P:Pp,anim,act,stopAct,hero:true,girl:!!girl};
@@ -2324,7 +2338,7 @@ function musicLabel(){const l=$('#musicLbl');if(l)l.textContent=muted?'Sound off
 // volume sliders, shared by the title screen and the pause menu
 function soundControls(){
   const sl=(k,label)=>`<label class="vol"><span>${label}</span><input type="range" min="0" max="100" step="5" value="${Math.round(VOL[k]*100)}" data-vol="${k}" aria-label="${label} volume"><b>${Math.round(VOL[k]*100)}%</b></label>`;
-  return `<div class="vols"><button class="btn" id="sndMute">Sound: ${muted?'Off':'On'}</button>${sl('music','Menu music')}${sl('amb','Ambience')}${sl('sfx','Effects')}</div>`;
+  return `<div class="vols"><button class="btn" id="sndMute">Sound: ${muted?'Off':'On'}</button>${sl('music','Music')}${sl('amb','Ambience')}${sl('sfx','Effects')}</div>`;
 }
 function bindSoundControls(){
   $('#sndMute').onclick=()=>{setMuted(!muted);$('#sndMute').textContent='Sound: '+(muted?'Off':'On');musicLabel();if(!muted)sfx('ui');};
@@ -2337,8 +2351,38 @@ function bindSoundControls(){
 function applyVolumes(){if(SFX_BUS)SFX_BUS.gain.setTargetAtTime(volGain('sfx'),AC.currentTime,.05);}
 $('#bMusic').onclick=e=>{e.stopPropagation();unlockAudio();
   if(!MUS.heard&&musicOn){MUS.heard=true;musicLabel();return;} // the first tap just starts the music
-  mode='titlehow';openModal(win('Sound',soundControls()+'<p class="hint">Menu music plays on the title screen and in character creation. Ambience is the sound of the island: wind, waves, crickets and more.</p>'),'dialog');
+  mode='titlehow';openModal(win('Sound',soundControls()+'<p class="hint">Music plays on the title screen, in character creation and down in the crypt. Ambience is the sound of the island: wind, waves, crickets and more.</p>'),'dialog');
   bindSoundControls();modal.querySelector('.x').onclick=()=>{closeModal();mode='title';};};
+
+/* --- the crypt theme: slow A minor, low organ and choir, a heartbeat, a music box that has seen better days --- */
+const DSONG={beat:60/66,
+  chords:[[45,52,57,60],[41,48,53,57],[38,45,50,53],[40,47,52,56]],
+  mel:[[[0,76,1.5],[1.5,77,.5],[2,76,2]],[[0,72,3],[3,71,1]],[[0,69,2],[2,74,1],[3,72,1]],[[0,71,2],[2,68,2]],
+       [[0,64,1],[1,69,1],[2,72,1],[3,76,1]],[[0,77,2],[2,76,1],[3,72,1]],[[0,74,2],[2,77,2]],[[0,76,3],[3,68,1]]]};
+const DMUS={next:0,bar:0,loops:0};
+function dPad(t,notes,d){
+  const g=AC.createGain(),f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520;
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.03,t+1.2); g.gain.setValueAtTime(.03,t+d-.6); g.gain.linearRampToValueAtTime(0,t+d+.4); f.connect(g).connect(MUS_BUS);
+  for(const m of notes){const o=AC.createOscillator();o.type='triangle';o.frequency.value=mtof(m-12);o.detune.value=rand(-7,7);o.connect(f);o.start(t);o.stop(t+d+.5);}
+  // a far-off choir on the top notes
+  const cg=AC.createGain(), cf=AC.createBiquadFilter(); cf.type='bandpass'; cf.frequency.value=820; cf.Q.value=1.2; cg.gain.setValueAtTime(0,t); cg.gain.linearRampToValueAtTime(.014,t+1.6); cg.gain.linearRampToValueAtTime(0,t+d+.3); cf.connect(cg).connect(MUS_BUS);
+  for(const m of notes.slice(1)){const o=AC.createOscillator(),l=AC.createOscillator(),lg=AC.createGain();o.type='sawtooth';o.frequency.value=mtof(m+12);l.frequency.value=5;lg.gain.value=4;l.connect(lg).connect(o.frequency);o.connect(cf);o.start(t);l.start(t);o.stop(t+d+.4);l.stop(t+d+.4);}
+}
+function dBeat(t,v=.16){for(const [dt,f0] of [[0,62],[.32,54]]){const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(f0,t+dt);o.frequency.exponentialRampToValueAtTime(36,t+dt+.22);g.gain.setValueAtTime(v,t+dt);g.gain.exponentialRampToValueAtTime(.0008,t+dt+.3);o.connect(g).connect(MUS_BUS);o.start(t+dt);o.stop(t+dt+.32);}}
+function dWhisper(t){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type='bandpass';f.Q.value=6;f.frequency.setValueAtTime(600,t);f.frequency.linearRampToValueAtTime(1400,t+2.4);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.025,t+1.2);g.gain.linearRampToValueAtTime(0,t+2.6);s.connect(f).connect(g).connect(MUS_BUS);s.start(t);s.stop(t+2.7);}
+function scheduleCrypt(){
+  const B=DSONG.beat, bar=B*4;
+  while(DMUS.next<AC.currentTime+.6){
+    const t=DMUS.next, i=DMUS.bar, ch=DSONG.chords[i%4];
+    if(i%4===0)dPad(t,ch,bar*2); if(i%4===2)dPad(t,ch,bar*2);
+    dBeat(t,.14); if(i%2===1)dBeat(t+B*2,.08);
+    if(DMUS.loops%2===0)for(const [b,m,d] of DSONG.mel[i])mBox(t+b*B,m,d*B,.055);
+    else if(i%2===0)mBox(t,DSONG.mel[i][0][1]-12,B*2,.05);
+    if(i===0)mBell(t,33,.08);
+    if(i===5&&DMUS.loops%2)dWhisper(t+B);
+    DMUS.next+=bar; DMUS.bar=(i+1)%8; if(!DMUS.bar)DMUS.loops++;
+  }
+}
 function updateAudio(dt){
   if(!AC||AC.state!=='running')return;
   const menu=mode==='title'||mode==='titlehow'||mode==='create';
@@ -2346,11 +2390,14 @@ function updateAudio(dt){
   if(want&&!MUS.want){MUS.next=Math.max(MUS.next,AC.currentTime+.1);}
   if(!want&&MUS.want){MUS.bar=0;MUS.loops=0;}
   MUS.want=want;
-  MUS_BUS.gain.setTargetAtTime(want?.94*volGain('music'):0,AC.currentTime,want?.3:.4);
+  if(!(DUN.active&&mode==='play'))MUS_BUS.gain.setTargetAtTime(want?.94*volGain('music'):0,AC.currentTime,want?.3:.4);
   if(want){scheduleMusic();if(!MUS.heard){MUS.heard=true;musicLabel();}} else MUS.next=0;
   if(!AMB)makeAmbience();
   const ag=(menu?.6:1)*volGain('amb'); AMB_BUS.gain.setTargetAtTime(ag,AC.currentTime,.3); AMB_WET.gain.setTargetAtTime(ag,AC.currentTime,.3);
-  if(VOL.amb>0)updateAmbience(dt,menu?(musicOn?.5:1):1);
+  const crypt=DUN.active&&mode==='play';
+  if(VOL.amb>0)updateAmbience(dt,crypt?0:menu?(musicOn?.5:1):1); // no wind, waves or crickets down in the crypt
+  if(crypt&&musicOn){if(!DMUS.on){DMUS.on=true;DMUS.next=AC.currentTime+.2;DMUS.bar=0;DMUS.loops=0;}MUS_BUS.gain.setTargetAtTime(1.05*volGain('music'),AC.currentTime,.8);scheduleCrypt();}
+  else if(DMUS.on){DMUS.on=false;}
 }
 
 /* =================================================================
@@ -3463,8 +3510,8 @@ function renderCreateOpts(){
   const det=LOOK.model!=='Classic';
   $('#optStyle').hidden=det; $('#modelNote').hidden=!det;
   const girl=LOOK.model==='Girl', ready=girl?HEROINE:HERO;
-  $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. The colors below tint her hair, skin, clothes and backpack.':'He has spiky hair. More hair styles are coming.';
-  sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); if(!LOOK.pants)LOOK.pants=PANTS0; if(!LOOK.shoes)LOOK.shoes=SHOES0; sw('#oPants',LOOK_OPTS.pants,'pants'); sw('#oShoes',LOOK_OPTS.shoes,'shoes'); if(!LOOK.pack)LOOK.pack=LOOK_OPTS.pack[0]; sw('#oPack',LOOK_OPTS.pack,'pack'); $('#optPack').hidden=LOOK.model!=='Girl'; ch('#oHat',LOOK_OPTS.hat.concat(createEdit&&S&&S.hats?S.hats:[]),'hat');
+  $('#modelNote').textContent=!ready?'Loading the model…':girl?'She has braids. The colors below tint her hair, skin, clothes and backpack.':'The colors below tint his hair, skin, clothes and backpack.';
+  sw('#oSkin',LOOK_OPTS.skin,'skin'); ch('#oStyle',LOOK_OPTS.style,'style'); sw('#oHair',LOOK_OPTS.hair,'hair'); sw('#oOutfit',LOOK_OPTS.outfit,'outfit'); if(!LOOK.pants)LOOK.pants=PANTS0; if(!LOOK.shoes)LOOK.shoes=SHOES0; sw('#oPants',LOOK_OPTS.pants,'pants'); sw('#oShoes',LOOK_OPTS.shoes,'shoes'); if(!LOOK.pack)LOOK.pack=LOOK_OPTS.pack[0]; sw('#oPack',LOOK_OPTS.pack,'pack'); $('#optPack').hidden=LOOK.model==='Classic'; ch('#oHat',LOOK_OPTS.hat.concat(createEdit&&S&&S.hats?S.hats:[]),'hat');
 }
 $('#bRandom').onclick=()=>{const p=a=>a[randi(0,a.length-1)];LOOK={model:LOOK.model||'Detailed',skin:p(LOOK_OPTS.skin),hair:p(LOOK_OPTS.hair),style:p(LOOK_OPTS.style),outfit:p(LOOK_OPTS.outfit),pants:p(LOOK_OPTS.pants),shoes:p(LOOK_OPTS.shoes),pack:p(LOOK_OPTS.pack),hat:p(LOOK_OPTS.hat)};sfx('ui');renderCreateOpts();rebuildPreview();};
 $('#bBack').onclick=()=>{if(createEdit){mode='play';$('#create').hidden=true;$('#hud').hidden=false;}else toTitle();};
