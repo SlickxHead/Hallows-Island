@@ -120,6 +120,8 @@ h3.sub{margin:8px 0 0;font-family:var(--f-label);font-size:12px;letter-spacing:.
 .menubar{display:flex;gap:6px}
 .mb{width:44px;height:44px;border-radius:9px;display:grid;place-items:center;padding:0;position:relative}
 .mb svg{width:22px;height:22px}
+.mb svg,.sk svg{position:absolute!important;left:50%;top:50%;transform:translate(-50%,-50%);display:block;margin:0}
+.mb,.sk:not(.act){font-size:0;line-height:0;text-indent:0;letter-spacing:0;padding:0!important}
 .mb kbd{position:absolute;bottom:-4px;right:-4px;font:800 9px var(--f-body);background:var(--parchment);color:var(--ink);border-radius:3px;padding:1px 3px}
 #prompt{position:absolute;left:50%;bottom:max(130px,calc(env(safe-area-inset-bottom,0px) + 130px));transform:translateX(-50%);padding:9px 16px 9px 10px;display:flex;align-items:center;gap:10px;font-weight:800;white-space:nowrap;pointer-events:none;transition:opacity .15s}
 kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:5px;background:var(--parchment);color:var(--ink);font:800 13px var(--f-body);box-shadow:0 2px 0 #7a5530}
