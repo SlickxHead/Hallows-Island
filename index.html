@@ -585,7 +585,7 @@ const PANTS0='#2b2622', SHOES0='#4a3122';
 ================================================================= */
 const DOCK_A=45*D2R, DOCK={t0:R(DOCK_A)-4,t1:R(DOCK_A)+15,w:1.5};
 const P={
-  village:{x:0,z:0}, house:{x:-17,z:-8}, yard:{x:-17,z:-1}, merchant:{x:12,z:1}, hazel:{x:12,z:2.6}, pete:{x:3,z:-6.5}, wick:{x:-7,z:-4.8},
+  village:{x:0,z:0}, house:{x:-17,z:-8}, yard:{x:-17,z:-1}, merchant:{x:12,z:1}, hazel:{x:12,z:2.6}, pete:{x:3,z:-6.5}, wick:{x:8.5,z:-7.6},
   patch:polar(140,28), graveyard:polar(-75,31), cave:polar(-133,37), beach:polar(45,48),
   lighthouse:edgePt(-20,1), falls:edgePt(-103,-10), sign:{x:-3.5,z:4.5},
 };
@@ -822,7 +822,7 @@ function loadPete(){
 function peteClear(x0,z0,x1,z1){ // a straight walk that stays in the plaza and misses everything solid
   const d=Math.hypot(x1-x0,z1-z0), n=Math.ceil(d/.35);
   for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n, z=z0+(z1-z0)*i/n;
-    if(groundH(x,z)<.49)return false;
+    if(groundH(x,z)<.49||onLog(x,z))return false;
     for(const c of COL){if(c===peteCol)continue;if(Math.hypot(c.x-x,c.z-z)<c.r+.75)return false;}}
   return true;
 }
@@ -904,7 +904,7 @@ function talkPatty(){
 function npcClear(skip,x0,z0,x1,z1){
   const d=Math.hypot(x1-x0,z1-z0), n=Math.ceil(d/.35);
   for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n, z=z0+(z1-z0)*i/n;
-    if(groundH(x,z)<.49)return false;
+    if(groundH(x,z)<.49||onLog(x,z))return false;
     for(const c of COL){if(c===skip)continue;if(Math.hypot(c.x-x,c.z-z)<c.r+.75)return false;}}
   return true;
 }
@@ -950,6 +950,33 @@ function updatePatty(dt){
   pattyInter.x=pos.x; pattyInter.z=pos.z;
   p.aIdle.setEffectiveWeight(1-p.walk); p.aWalk.setEffectiveWeight(p.walk); p.aWalk.timeScale=p.state==='follow'?Math.max(1,Math.min(2.6,speed/1.6)):1.1;
   p.mixer.update(dt);
+}
+
+/* ---------- Keeper Wick: the player-made rigged model. He stays put by the lighthouse road and idles ---------- */
+let WICK=null;
+function loadWick(){
+  if(!THREE.GLTFLoader||!window.fetch)return;
+  loadGLB('wick').then(gl=>{
+    const m=gl.scene;
+    m.traverse(o=>{if(o.isMesh){if(o.material.map)o.material.map.encoding=THREE.LinearEncoding;o.material.metalness=0;o.material.roughness=.85;o.material.needsUpdate=true;o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+    m.scale.setScalar(2.35);
+    wickObj.children.forEach(c=>c.visible=false); wickObj.add(m);
+    const mixer=new THREE.AnimationMixer(m), clip=n=>gl.animations.find(c=>c.name===n)||gl.animations[0];
+    const aIdle=mixer.clipAction(clip('idle')), aLook=mixer.clipAction(clip('look'));
+    aIdle.play(); aLook.play(); aLook.setEffectiveWeight(0);
+    WICK={mixer,aIdle,aLook,look:0,lookT:rand(8,14),rot0:wickObj.rotation.y,rot:wickObj.rotation.y};
+  }).catch(()=>{WICK=null;});
+}
+function updateWick(dt){
+  const w=WICK; if(!w)return;
+  // now and then he looks around the plaza; while you talk he turns to you
+  w.lookT-=dt; if(w.lookT<=0){w.look=w.look?0:1;w.lookT=w.look?rand(10,15):rand(8,14);if(w.look){w.aLook.reset();w.aLook.play();}}
+  const lw=w.aLook.getEffectiveWeight()+((w.look?1:0)-w.aLook.getEffectiveWeight())*Math.min(1,dt*1.5);
+  w.aLook.setEffectiveWeight(lw); w.aIdle.setEffectiveWeight(1-lw);
+  const talking=modalOpen&&TALKING_TO==='wick', near=Math.hypot(player.x-P.wick.x,player.z-P.wick.z)<4;
+  const face=(talking||near)?Math.atan2(player.x-P.wick.x,player.z-P.wick.z):w.rot0;
+  let da=face-w.rot; da=Math.atan2(Math.sin(da),Math.cos(da)); w.rot+=da*Math.min(1,dt*3); wickObj.rotation.y=w.rot;
+  w.mixer.update(dt);
 }
 /* ---------- Detailed hero (Tripo3D model, rigged and animated with Tripo motion presets) ---------- */
 let HERO=null;                       // {scene, clips, upper} once models/hero.glb has loaded
@@ -1431,7 +1458,7 @@ function buildWorld(){
   addCol(0,0,1.5);
   plight('#ff9a3c',1.15,15,0,2.2,0,.18);
   // logs to sit on
-  for(const a of [.6,2.4,4.2]){const l=mk(Cyl(.22,.22,1.6,8),M('#4a3322'),Math.cos(a)*2.6,.72,Math.sin(a)*2.6,scene);l.rotation.set(0,-a,Math.PI/2);addCol(Math.cos(a)*2.6,Math.sin(a)*2.6,.5);}
+  for(const a of [.6,2.4,4.2]){const l=mk(Cyl(.2,.2,1.6,8),M('#4a3322'),Math.cos(a)*2.6,.6,Math.sin(a)*2.6,scene);l.rotation.set(0,-a,Math.PI/2);LOGS.push({x:Math.cos(a)*2.6,z:Math.sin(a)*2.6,a});}
   // plaza lanterns
   for(let i=0;i<6;i++){const a=i/6*TAU+.3;const x=Math.cos(a)*8.5,z=Math.sin(a)*8.5;if(Math.hypot(x-P.merchant.x,z-P.merchant.z)<4)continue;const l=buildLantern(true);l.position.set(x,.5,z);l.rotation.y=-a;scene.add(l);addCol(x,z,.3);}
   // pumpkin piles
@@ -1456,9 +1483,9 @@ function buildWorld(){
   const lp=buildLantern(true); lp.position.set(P.pete.x-1.4,.5,P.pete.z-.6); scene.add(lp);
   peteMark=makeMarker(); peteMark.position.set(P.pete.x,3.6,P.pete.z); scene.add(peteMark); MARKS.pete=peteMark;
   wickObj=buildCharacter({skin:'#e3b08c',hair:'#e6e6ee',style:'Short',outfit:'#2e3d5a',hat:'Beanie'},{noPack:true,scarf:'#d9a441'});
-  wickObj.position.set(P.wick.x,.5,P.wick.z); wickObj.rotation.y=.9; scene.add(wickObj); addCol(P.wick.x,P.wick.z,.6);
+  wickObj.position.set(P.wick.x,.5,P.wick.z); wickObj.rotation.y=Math.atan2(-P.wick.x,-P.wick.z); scene.add(wickObj); addCol(P.wick.x,P.wick.z,.6);
   {const wl=buildLantern(false); wl.scale.setScalar(.9); wl.rotation.x=-Math.PI/2; wickObj.userData.P.hand.add(wl); wickObj.userData.P.armR.rotation.x=-.5;}
-  const wb=new THREE.Group(); mk(Box(1.3,.45,.6),M('#6b4a2e'),0,.22,0,wb); mk(Box(.7,.08,.5),M('#8a6038'),0,.5,0,wb); wb.position.set(P.wick.x-1.3,.5,P.wick.z-.5); wb.rotation.y=.9; scene.add(wb); addCol(P.wick.x-1.3,P.wick.z-.5,.6);
+  const wb=new THREE.Group(); mk(Box(1.3,.45,.6),M('#6b4a2e'),0,.22,0,wb); mk(Box(.7,.08,.5),M('#8a6038'),0,.5,0,wb); wb.position.set(P.wick.x+1.3,.5,P.wick.z-.6); wb.rotation.y=-.6; scene.add(wb); addCol(P.wick.x+1.3,P.wick.z-.6,.6);
   MARKS.wick=makeMarker(); MARKS.wick.position.set(P.wick.x,3.6,P.wick.z); scene.add(MARKS.wick);
   hazelObj=buildCharacter({skin:'#f2cfae',hair:'#ecd28d',style:'Long',outfit:'#3b2b4a',hat:'Witch Hat'},{noPack:true,scarf:'#a77bff',band:'#a77bff'});
   hazelObj.position.set(P.merchant.x,.5,P.merchant.z-1.4); scene.add(hazelObj);
@@ -2993,7 +3020,9 @@ function faceTo(x,z){player.rot=Math.atan2(x-player.x,z-player.z);}
 ================================================================= */
 function onDock(x,z){const t=x*Math.cos(DOCK_A)+z*Math.sin(DOCK_A),p=-x*Math.sin(DOCK_A)+z*Math.cos(DOCK_A);return t>DOCK.t0&&t<DOCK.t1&&Math.abs(p)<DOCK.w;}
 function walkable(x,z){if(S&&S.inside)return inBounds(x,z,.42);const d=Math.hypot(x,z);return d<R(Math.atan2(z,x))+2.4||onDock(x,z);}
-function heightAt(x,z){if(S&&S.inside)return .5;if(onDock(x,z)){const t=x*Math.cos(DOCK_A)+z*Math.sin(DOCK_A);if(t>R(DOCK_A)-.5)return .78;}return groundH(x,z);}
+const LOGS=[]; // campfire logs you can step over
+function onLog(x,z){for(const l of LOGS){const dx=x-l.x,dz=z-l.z,along=dx*-Math.sin(l.a)+dz*Math.cos(l.a),across=dx*Math.cos(l.a)+dz*Math.sin(l.a);if(Math.abs(along)<.85&&Math.abs(across)<.32)return true;}return false;}
+function heightAt(x,z){if(S&&S.inside)return .5;if(onLog(x,z))return .78;if(onDock(x,z)){const t=x*Math.cos(DOCK_A)+z*Math.sin(DOCK_A);if(t>R(DOCK_A)-.5)return .78;}return groundH(x,z);}
 function tryMove(nx,nz){
   if(!walkable(nx,nz)){if(walkable(nx,player.z))nz=player.z;else if(walkable(player.x,nz))nx=player.x;else return;}
   for(let it=0;it<2;it++)for(const c of COL){if(c.r<=0)continue;const dx=nx-c.x,dz=nz-c.z,d=Math.hypot(dx,dz),m=c.r+.42;if(d<m){if(d<1e-4){nx+=m;continue;}nx=c.x+dx/d*m;nz=c.z+dz/d*m;}}
@@ -3166,9 +3195,10 @@ function loop(now){
   for(const a of ANIM)a(clock);
   updateParticles(dt); updateSmoke(dt);
   for(const k in MARKS)MARKS[k].position.y=3.6+Math.sin(clock*3+(k==='wick'?1.5:0))*.15;
-  if(wickObj){wickObj.userData.P.body.position.y=Math.sin(clock*1.4+2)*.025;wickObj.userData.P.head.rotation.y=Math.sin(clock*.5)*.3;}
+  if(wickObj&&!WICK){wickObj.userData.P.body.position.y=Math.sin(clock*1.4+2)*.025;wickObj.userData.P.head.rotation.y=Math.sin(clock*.5)*.3;}
   if(PETE&&mode==='play')updatePete(dt);
   if(PATTY&&mode==='play')updatePatty(dt);
+  if(WICK)updateWick(dt);
   if(peteObj&&!PETE){peteObj.userData.P.body.position.y=Math.sin(clock*1.6)*.03;peteObj.userData.P.head.rotation.z=Math.sin(clock*.8)*.12;peteObj.userData.P.armR.rotation.z=Math.sin(clock*1.3)*.15;}
   if(hazelObj){hazelObj.userData.P.body.position.y=Math.sin(clock*1.8+1)*.03;hazelObj.userData.P.head.rotation.y=Math.sin(clock*.6)*.4;hazelObj.userData.P.armL.rotation.x=-.4+Math.sin(clock*2)*.2;}
   if(mode==='title'||mode==='titlehow'){titleA+=dt*.05;const r=52;camera.position.set(Math.cos(titleA)*r,28,Math.sin(titleA)*r);camera.lookAt(0,0,0);moon.position.set(-22,48,-30);moon.target.position.set(0,0,0);}
@@ -3243,7 +3273,7 @@ checkOrient();
 function boot(){
   try{renderIcons();}catch(e){}
   buildWorld(); makeNavObjects(); makeTools(); makeFishingGear(); slashFx=makeSlashFx(); buildCreateScene(); buildMiniBg(); resize();
-  S=null; toTitle(); loadHero(); loadTrees(); loadPete(); loadPatty();
+  S=null; toTitle(); loadHero(); loadTrees(); loadPete(); loadPatty(); loadWick();
   // a stand-in player for title (hidden)
   requestAnimationFrame(loop);
 }

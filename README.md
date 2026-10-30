@@ -43,4 +43,5 @@ The player character is a 3D model generated with Tripo3D, split into parts, rig
 - `models/heroine.glb` — the rigged girl character (her own idle, walk and run; the boy's actions retargeted onto her)
 - `models/pete.glb` — Pumpkin Pete (your rigged Tripo model with his own idle and walk)
 - `models/patty.glb` — Pumpkin Patty, Pete's sweetheart (your rigged Tripo model with her own idle and walk)
+- `models/wick.glb` — Keeper Wick (your rigged Tripo model; idles and looks around)
 - `manifest.webmanifest`, `sw.js`, `icons/` — what makes it installable as an app
