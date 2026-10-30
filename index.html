@@ -70,7 +70,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--glow);outline-o
 
 /* ---------- character creation ---------- */
 #create{display:grid;grid-template-columns:minmax(260px,330px) 1fr minmax(240px,300px);gap:16px;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));pointer-events:none}
-#create .panel{pointer-events:auto;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:auto;align-self:start;max-height:100%}
+#create .panel{box-sizing:border-box;pointer-events:auto;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:auto;align-self:start;max-height:calc(var(--vh,100vh) - 32px)}
 #create .spacer{pointer-events:auto;cursor:grab}
 .opt h3{margin:0 0 7px;font-family:var(--f-label);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .swatches{display:flex;flex-wrap:wrap;gap:7px}
@@ -158,7 +158,7 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 
 /* ---------- modals ---------- */
 #modal{pointer-events:auto;display:grid;grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,1fr);place-items:center;background:#05031088;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.win{width:min(640px,100%);max-height:100%;display:flex;flex-direction:column;position:relative;padding:30px 16px 16px}
+.win{box-sizing:border-box;width:min(640px,100%);max-height:calc(var(--vh,100vh) - 56px);display:flex;flex-direction:column;position:relative;padding:30px 16px 16px}
 .win > .tab-label{position:absolute;top:-16px;left:18px}
 .win .x{position:absolute;top:8px;right:8px;width:34px;height:34px;padding:0;border-radius:8px}
 .win .body{overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
@@ -190,7 +190,7 @@ kbd.k{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:
 #modal.side .win{width:min(540px,56vw)}
 body.talking #tracker,body.talking #prompt{visibility:hidden}
 #modal.side .dlg{width:min(560px,62vw)}
-.dlg{width:min(720px,100%);display:grid;grid-template-columns:1fr auto;gap:14px;padding:18px;position:relative;align-self:end}
+.dlg{box-sizing:border-box;width:min(720px,100%);display:grid;grid-template-columns:1fr auto;gap:14px;padding:18px;position:relative;align-self:end}
 .dlg .who{font-family:var(--f-label);font-weight:800;color:var(--glow);font-size:17px;margin-bottom:6px}
 .dlg p{margin:0;line-height:1.55;font-size:15px}
 .dlg .rw{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -279,7 +279,14 @@ body.talking #tracker,body.talking #prompt{visibility:hidden}
 body.menuopen #stick,body.menuopen #skills,body.menuopen #prompt{visibility:hidden}
 .touch .tabs button{padding:9px 14px}
 @media (max-height:500px){
-  .dlg{grid-template-columns:1fr auto;max-height:calc(100vh - 20px);overflow:auto;align-self:end}
+  .dlg{grid-template-columns:1fr auto;max-height:calc(var(--vh,100vh) - 24px);overflow:auto;align-self:end}
+  .win{max-height:calc(var(--vh,100vh) - 40px)}
+  #create .panel{max-height:calc(var(--vh,100vh) - 20px)}
+  .btn{padding:8px 14px}
+  .rows{gap:5px}
+  .q{padding:8px 10px}
+  .tab-label{font-size:13px;padding:5px 14px}
+  .win > .tab-label{top:-14px}
   .dlg .acts{min-width:150px;gap:5px}
   .dlg .acts .btn{padding:7px 10px;font-size:13px}
   #modal.side .win{width:min(560px,62vw)}
@@ -3729,6 +3736,8 @@ if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('
 
 
 /* ---------- landscape lock on phones ---------- */
+function setVH(){document.documentElement.style.setProperty('--vh',Math.round((window.visualViewport&&visualViewport.height)||innerHeight)+'px');}
+setVH(); addEventListener('resize',setVH); addEventListener('orientationchange',()=>setTimeout(setVH,300)); if(window.visualViewport)visualViewport.addEventListener('resize',setVH);
 const IS_PHONE=IS_TOUCH&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600;
 let portrait=false;
 function checkOrient(){
