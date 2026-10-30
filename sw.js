@@ -1,5 +1,5 @@
 // Hallows Island service worker: keeps the game playable offline after the first launch.
-const VERSION = 'hallows-v23';
+const VERSION = 'hallows-v24';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png', './models/hero.glb', './models/heroine.glb', './models/pete.glb', './models/patty.glb', './models/wick.glb', './models/tree_pine.glb', './models/tree_autumn.glb'];
 const CDN = /^(https:\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com))\//;
